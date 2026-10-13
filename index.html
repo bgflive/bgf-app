@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B1F3A">
+<title>BGF.LIVE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<!--
+  BGF.LIVE — aplikacija (web dio), 486 · 13.10.2026.
+  Jedna aplikacija za sve (O1). Ovaj prvi dio: prijava, moji turniri i
+  TURNIRSKI NAČIN EKIPE (O33): riba na štapu → tko je na štapu (O48, zaključano)
+  → video 1 (kačenje) → ishod → video 2 (puštanje/izvlačenje) → stanje kod suca.
+  Videi idu s mobitela izravno u R2 (potpisana poveznica s backenda, O34/O50).
+  Bez signala: kačenja i ulovi čekaju u redu na mobitelu i šalju se sami
+  (backend iste prijave prepoznaje po clientId). Svijetla tema (O51), velika
+  dugmad za mokre ruke i sunce. Kasnije se isti kod pakira u Android/iPhone (Capacitor).
+-->
+<style>
+:root{
+  --more:#0B1F3A;      /* zaglavlje: noćno more */
+  --plava:#0558E8;     /* BGF.LIVE plava iz logotipa */
+  --papir:#F4F7FB;     /* pozadina, čitljiva na suncu */
+  --tinta:#0E1726;
+  --siva:#5B6B82;
+  --crta:#D9E1EC;
+  --baklja:#F2621B;    /* riba na štapu: narančasta signalne baklje */
+  --zeleno:#12805C;
+  --zuto:#B7791F;
+  --crveno:#C53030;
+  --kartica:#FFFFFF;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --papir:#0A1526; --tinta:#E8EEF7; --siva:#93A3BA; --crta:#22344F; --kartica:#11223B;
+  }
+}
+:root[data-theme="dark"]{ --papir:#0A1526; --tinta:#E8EEF7; --siva:#93A3BA; --crta:#22344F; --kartica:#11223B; }
+*{box-sizing:border-box}
+html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px)}
+:root{padding-top:0}
+body{margin:0; min-height:100%; background:var(--papir); color:var(--tinta);
+  font:16px/1.45 Barlow, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color:transparent; padding-bottom:env(safe-area-inset-bottom,0px)}
+button{font:inherit; cursor:pointer}
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible{outline:3px solid var(--plava); outline-offset:2px}
+.skriveno{display:none !important}
+
+/* ---------- zaglavlje ---------- */
+.vrh{position:sticky; top:0; z-index:5; background:var(--more); color:#fff;
+  padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 12px}
+.vrh-red{display:flex; align-items:center; gap:10px}
+.logo{font:800 22px/1 "Barlow Condensed", sans-serif; letter-spacing:.5px}
+.logo i{font-style:normal; color:#4C8DFF}
+.vrh .ekipa{font:700 20px/1.1 "Barlow Condensed", sans-serif; margin-top:8px}
+.vrh .pod{color:#A9BBD6; font-size:14px}
+.vrh .sat{margin-left:auto; font:700 20px/1 "Barlow Condensed", sans-serif; font-variant-numeric:tabular-nums}
+.gumb-ikona{background:rgba(255,255,255,.1); color:#fff; border:0; border-radius:10px; padding:8px 10px; font-size:14px}
+.signal{display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#A9BBD6}
+.signal::before{content:""; width:8px; height:8px; border-radius:50%; background:#3DDC97}
+.signal.ne::before{background:#F2621B}
+
+main{max-width:560px; margin:0 auto; padding:16px}
+h2{font:700 20px/1.2 "Barlow Condensed", sans-serif; margin:22px 0 10px}
+
+/* ---------- prijava ---------- */
+.prijava{max-width:420px; margin:8vh auto 0; padding:0 20px}
+.prijava .logo{font-size:40px; color:var(--more)}
+:root[data-theme="dark"] .prijava .logo{color:#fff}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .prijava .logo{color:#fff} }
+.prijava p{color:var(--siva)}
+label{display:block; font-weight:600; margin:16px 0 6px}
+input, select{width:100%; font:inherit; font-size:17px; padding:14px; border-radius:12px; border:1.5px solid var(--crta); background:var(--kartica); color:var(--tinta)}
+.gumb{display:block; width:100%; border:0; border-radius:12px; padding:16px; font-weight:700; font-size:18px; background:var(--plava); color:#fff; margin-top:18px}
+.gumb.drugi{background:transparent; color:var(--plava); border:1.5px solid var(--plava)}
+.gumb:disabled{opacity:.55}
+.greska{color:var(--crveno); font-weight:600; margin-top:12px; min-height:1.4em}
+
+/* ---------- popis turnira ---------- */
+.turnir{display:block; width:100%; text-align:left; background:var(--kartica); border:1.5px solid var(--crta); border-radius:var(--r); padding:16px; margin-bottom:10px; color:var(--tinta)}
+.turnir b{font:700 19px/1.2 "Barlow Condensed", sans-serif; display:block}
+.turnir span{color:var(--siva); font-size:14px}
+
+/* ---------- RIBA NA ŠTAPU ---------- */
+.dan{display:flex; justify-content:space-between; align-items:baseline; color:var(--siva); font-size:15px}
+.dan b{color:var(--tinta)}
+.baklja{position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  width:100%; min-height:190px; margin:12px 0 4px; border:0; border-radius:28px;
+  background:radial-gradient(120% 140% at 50% 0%, #FF8A3D 0%, var(--baklja) 55%, #C9450B 100%); color:#fff;
+  box-shadow:0 10px 0 #9E3608, 0 18px 30px rgba(242,98,27,.35); transition:transform .08s, box-shadow .08s}
+.baklja:active{transform:translateY(8px); box-shadow:0 2px 0 #9E3608, 0 6px 14px rgba(242,98,27,.3)}
+.baklja .veliko{font:800 46px/0.95 "Barlow Condensed", sans-serif; letter-spacing:.5px; text-transform:uppercase}
+.baklja .malo{font-size:15px; opacity:.92; margin-top:8px}
+.baklja:disabled{background:#9AA8BC; box-shadow:0 10px 0 #6F7D91; }
+.zatvoreno{background:var(--kartica); border:1.5px dashed var(--crta); border-radius:var(--r); padding:18px; text-align:center; color:var(--siva); margin-top:12px}
+
+/* ---------- otvorena borba ---------- */
+.borba{background:var(--kartica); border:2px solid var(--baklja); border-radius:20px; padding:16px; margin-top:14px}
+.borba-vrh{display:flex; align-items:baseline; gap:10px}
+.borba-vrh .br{font:800 26px/1 "Barlow Condensed", sans-serif; color:var(--baklja)}
+.borba-vrh .vrijeme{margin-left:auto; font:700 30px/1 "Barlow Condensed", sans-serif; font-variant-numeric:tabular-nums}
+.ribolovac{display:flex; align-items:center; gap:8px; margin:10px 0 2px; font-weight:600}
+.ribolovac .lokot{font-size:14px; color:var(--siva)}
+.akcije{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px}
+.akcija{border:1.5px solid var(--crta); background:var(--papir); color:var(--tinta); border-radius:14px; padding:14px 10px; font-weight:700; font-size:16px; min-height:58px}
+.akcija.glavna{background:var(--more); color:#fff; border-color:var(--more)}
+.akcija.ok{border-color:var(--zeleno); color:var(--zeleno)}
+.traka{height:6px; border-radius:6px; background:var(--crta); overflow:hidden; margin-top:8px}
+.traka i{display:block; height:100%; width:0; background:var(--plava); transition:width .2s}
+
+/* ---------- ulovi ---------- */
+.ulov{background:var(--kartica); border:1.5px solid var(--crta); border-radius:var(--r); padding:14px; margin-bottom:10px}
+.ulov-vrh{display:flex; gap:10px; align-items:baseline}
+.ulov-vrh b{font:700 18px/1.2 "Barlow Condensed", sans-serif}
+.ulov-vrh .t{margin-left:auto; color:var(--siva); font-variant-numeric:tabular-nums}
+.stanje{display:inline-block; border-radius:999px; padding:4px 11px; font-size:13.5px; font-weight:700; margin-top:8px}
+.st-sent,.st-received{background:#E6EEFB; color:#1E4FA8}
+.st-proof_requested{background:#FFF1DC; color:#8A5A00}
+.st-proof_sent,.st-weighed{background:#E3F2FF; color:#0B5CAD}
+.st-recognized{background:#DDF3EA; color:var(--zeleno)}
+.st-rejected{background:#FDE3E3; color:var(--crveno)}
+.st-withdrawn{background:#ECEFF3; color:var(--siva)}
+.razlog{margin-top:6px; font-size:15px}
+.fali{color:var(--zuto); font-weight:600; font-size:14.5px; margin-top:6px}
+.male-akcije{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+.mala{border:1.5px solid var(--crta); background:transparent; color:var(--tinta); border-radius:10px; padding:10px 12px; font-weight:600; font-size:15px}
+.mala.plava{border-color:var(--plava); color:var(--plava)}
+.prazno{color:var(--siva); text-align:center; padding:18px; border:1.5px dashed var(--crta); border-radius:var(--r)}
+
+/* ---------- ploha (sheet) ---------- */
+.zastor{position:fixed; inset:0; background:rgba(5,14,28,.55); z-index:20; display:flex; align-items:flex-end}
+.ploha{width:100%; max-width:560px; margin:0 auto; background:var(--kartica); border-radius:22px 22px 0 0;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px)); max-height:88vh; overflow:auto}
+.ploha h3{font:800 26px/1.1 "Barlow Condensed", sans-serif; margin:2px 0 14px}
+.izbor{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.izbor button{border:1.5px solid var(--crta); background:var(--papir); color:var(--tinta); border-radius:14px; padding:16px 10px; font-weight:700; font-size:17px; min-height:64px}
+.izbor button.odabrano{border-color:var(--plava); background:#E6EEFB; color:#0B3F9E}
+.izbor .puno{grid-column:1/-1}
+.ishod-pusteno{border-color:var(--zeleno) !important}
+.ishod-brod{border-color:var(--plava) !important}
+.ishod-otpala{border-color:var(--siva) !important}
+.napomena{color:var(--siva); font-size:14.5px; margin-top:10px}
+
+/* ---------- obavijest ---------- */
+.tost{position:fixed; left:50%; top:calc(env(safe-area-inset-top,0px) + 12px); transform:translateX(-50%);
+  background:var(--more); color:#fff; padding:13px 18px; border-radius:12px; font-weight:600; z-index:40; max-width:92vw; box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.tost.lose{background:var(--crveno)}
+.red-info{background:#FFF1DC; color:#6B4500; border-radius:12px; padding:10px 12px; margin-top:12px; font-size:15px; font-weight:600}
+@media (prefers-reduced-motion: reduce){ .baklja{transition:none} .traka i{transition:none} }
+</style>
+</head>
+<body>
+
+<!-- ============ PRIJAVA ============ -->
+<section id="ekPrijava" class="prijava skriveno">
+  <div class="logo">BGF<i>.LIVE</i></div>
+  <p data-t="prijavaUvod">Prijavi se nalogom koji si dobio za natjecanje.</p>
+  <label for="email" data-t="email">E-pošta</label>
+  <input id="email" type="email" autocomplete="username" inputmode="email">
+  <label for="lozinka" data-t="lozinka">Lozinka</label>
+  <input id="lozinka" type="password" autocomplete="current-password">
+  <button class="gumb" id="btnPrijava" data-t="prijaviSe">Prijavi se</button>
+  <div class="greska" id="prijavaGreska" role="alert"></div>
+  <p style="margin-top:28px"><button class="mala" id="btnJezik1">English</button></p>
+</section>
+
+<!-- ============ ZAGLAVLJE ============ -->
+<header class="vrh skriveno" id="vrh">
+  <div class="vrh-red">
+    <div class="logo">BGF<i>.LIVE</i></div>
+    <span class="signal" id="signal" data-t="naVezi">Na vezi</span>
+    <span class="sat" id="sat">--:--</span>
+  </div>
+  <div class="ekipa" id="vrhEkipa"></div>
+  <div class="vrh-red"><span class="pod" id="vrhTurnir"></span>
+    <button class="gumb-ikona" id="btnIzbornik" style="margin-left:auto" aria-label="Izbornik">☰</button></div>
+</header>
+
+<main>
+  <!-- ============ MOJI TURNIRI ============ -->
+  <section id="ekTurniri" class="skriveno">
+    <h2 data-t="mojiTurniri">Moji turniri</h2>
+    <div id="popisTurnira"></div>
+  </section>
+
+  <!-- ============ TURNIRSKI NAČIN EKIPE ============ -->
+  <section id="ekEkipa" class="skriveno">
+    <div class="dan" id="danInfo"></div>
+    <button class="baklja" id="btnRiba">
+      <span class="veliko" data-t="ribaNaStapu">Riba na štapu</span>
+      <span class="malo" data-t="ribaPod">Stisni čim riba zagrize</span>
+    </button>
+    <div id="zatvoreno" class="zatvoreno skriveno"></div>
+    <div id="redInfo" class="red-info skriveno"></div>
+    <div id="borbe"></div>
+    <h2 data-t="naseRibe">Naše ribe</h2>
+    <div id="ulovi"><div class="prazno" data-t="nemaUlova">Još nema prijavljenih riba.</div></div>
+  </section>
+</main>
+
+<input type="file" id="datoteka" accept="video/*" capture="environment" class="skriveno">
+<div id="zastor" class="zastor skriveno"><div class="ploha" id="ploha" role="dialog" aria-modal="true"></div></div>
+<div id="tost" class="tost skriveno" role="status"></div>
+
+<script>
+'use strict';
+/* =================== POSTAVKE =================== */
+var BACKEND = 'https://bgf-live-backend.vercel.app';
+var VERZIJA = 'app 486';
+
+/* =================== JEZIK (O29: HR, EN; DE/IT kasnije) =================== */
+var TEKST = {
+  hr:{ prijavaUvod:'Prijavi se nalogom koji si dobio za natjecanje.', email:'E-pošta', lozinka:'Lozinka', prijaviSe:'Prijavi se',
+    naVezi:'Na vezi', bezSignala:'Bez signala', mojiTurniri:'Moji turniri', ribaNaStapu:'Riba na štapu', ribaPod:'Stisni čim riba zagrize',
+    naseRibe:'Naše ribe', nemaUlova:'Još nema prijavljenih riba.', tkoJeNaStapu:'Tko je na štapu?', kasnije:'Kasnije',
+    video1:'📹 Video 1 · kačenje', video2:'📹 Video 2', ishod:'Ishod', pusteno:'Pušteno', naBrodu:'Na brodu', otpala:'Otpala',
+    koja:'Koja riba?', posalji:'Pošalji sucu', odustani:'Odustani', povuci:'Povuci prijavu', prilozi:'📹 Priloži video',
+    st_sent:'Poslano sucu', st_received:'Sudac primio', st_proof_requested:'Sudac traži dokaz', st_proof_sent:'Dokaz poslan',
+    st_weighed:'Vagano', st_recognized:'Priznato', st_rejected:'Odbijeno', st_withdrawn:'Povučeno',
+    faliV1:'fali video 1 (kačenje)', faliV2:'fali video 2', ribolovacZak:'zaključano · ispravak radi sudac',
+    danZatvoren:'Danas se ne lovi ili dan još nije počeo. Prijave se primaju samo za vrijeme natjecanja.',
+    odjava:'Odjava', drugiTurnir:'Drugi turnir', jezik:'English', tema:'Tema', ostaloSamo:'„Ostalo” samo kao puštena riba.',
+    cekaRed:'Čeka slanje (bez signala): ', nemaTurnira:'Nisi upisan ni u jednu ekipu ni ulogu. Javi se organizatoru.',
+    sudacInfo:'Za suđenje otvori sučev panel.' },
+  en:{ prijavaUvod:'Sign in with the account you got for the competition.', email:'E-mail', lozinka:'Password', prijaviSe:'Sign in',
+    naVezi:'Online', bezSignala:'No signal', mojiTurniri:'My tournaments', ribaNaStapu:'Fish on', ribaPod:'Tap as soon as a fish strikes',
+    naseRibe:'Our fish', nemaUlova:'No fish reported yet.', tkoJeNaStapu:'Who is on the rod?', kasnije:'Later',
+    video1:'📹 Video 1 · hook-up', video2:'📹 Video 2', ishod:'Outcome', pusteno:'Released', naBrodu:'Boated', otpala:'Lost',
+    koja:'Which fish?', posalji:'Send to judge', odustani:'Cancel', povuci:'Withdraw report', prilozi:'📹 Attach video',
+    st_sent:'Sent to judge', st_received:'Judge received', st_proof_requested:'Judge asks for proof', st_proof_sent:'Proof sent',
+    st_weighed:'Weighed', st_recognized:'Accepted', st_rejected:'Rejected', st_withdrawn:'Withdrawn',
+    faliV1:'video 1 missing (hook-up)', faliV2:'video 2 missing', ribolovacZak:'locked · only the judge can change it',
+    danZatvoren:'No fishing today or the day has not started. Reports are accepted only during the competition.',
+    odjava:'Sign out', drugiTurnir:'Other tournament', jezik:'Hrvatski', tema:'Theme', ostaloSamo:'“Other” only as a released fish.',
+    cekaRed:'Waiting to send (no signal): ', nemaTurnira:'You are not on any team or role yet. Contact the organiser.',
+    sudacInfo:'To judge, open the judge panel.' }
+};
+var S = ucitaj();
+function t(k){ var j = TEKST[S.jezik] || TEKST.hr; return j[k] || TEKST.hr[k] || k; }
+function prevedi(){ document.documentElement.lang = S.jezik; document.querySelectorAll('[data-t]').forEach(function(el){ el.textContent = t(el.dataset.t); }); }
+
+/* =================== SPREMIŠTE NA MOBITELU =================== */
+function ucitaj(){
+  var d = {};
+  try{ d = JSON.parse(localStorage.getItem('bgfapp') || '{}') || {}; }catch(e){ d = {}; }
+  return Object.assign({ jezik:(navigator.language||'').toLowerCase().startsWith('hr') ? 'hr' : 'en', tema:'auto',
+    access:null, refresh:null, istek:0, tid:null, red:[], borbe:[], brojac:{} }, d);
+}
+function spremi(){
+  try{ localStorage.setItem('bgfapp', JSON.stringify({ jezik:S.jezik, tema:S.tema, access:S.access, refresh:S.refresh, istek:S.istek,
+    tid:S.tid, red:S.red, borbe:S.borbe, brojac:S.brojac, vezeKacenja:S.vezeKacenja })); }catch(e){}
+}
+function postaviTemu(){ if(S.tema==='auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', S.tema); }
+
+/* =================== POMOĆNO =================== */
+function $(id){ return document.getElementById(id); }
+function esc(x){ return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+function hhmm(d){ d = d || new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function danasISO(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function kljuc(){ return 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+var tostT;
+function tost(poruka, lose){ var el=$('tost'); el.textContent=poruka; el.className='tost'+(lose?' lose':''); clearTimeout(tostT); tostT=setTimeout(function(){ el.className='tost skriveno'; }, lose?5200:3200); }
+function vibriraj(u){ try{ navigator.vibrate && navigator.vibrate(u); }catch(e){} }
+function pokazi(id){ ['ekPrijava','ekTurniri','ekEkipa'].forEach(function(x){ $(x).classList.toggle('skriveno', x!==id); }); $('vrh').classList.toggle('skriveno', id==='ekPrijava'); }
+function trajanje(ms){ var s=Math.max(0,Math.floor(ms/1000)), m=Math.floor(s/60), h=Math.floor(m/60);
+  return (h? h+':'+String(m%60).padStart(2,'0') : m) + ':' + String(s%60).padStart(2,'0'); }
+
+/* =================== BACKEND =================== */
+function api(put, opt, pokusaj){
+  opt = opt || {};
+  var h = Object.assign({ 'Content-Type':'application/json' }, opt.headers || {});
+  if(S.access) h.Authorization = 'Bearer ' + S.access;
+  return fetch(BACKEND + put, Object.assign({}, opt, { headers:h })).then(function(r){
+    if(r.status === 401 && !pokusaj && S.refresh) return obnovi().then(function(){ return api(put, opt, true); });
+    return r.json().catch(function(){ return {}; }).then(function(d){
+      if(!r.ok){ var e = new Error(d.error || ('HTTP '+r.status)); e.status = r.status; e.odServera = true; throw e; }
+      return d;
+    });
+  });
+}
+function obnovi(){
+  return fetch(BACKEND+'/api/auth/refresh', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ refresh_token:S.refresh }) })
+    .then(function(r){ return r.json().then(function(d){ if(!r.ok) throw new Error(d.error||'refresh'); return d; }); })
+    .then(function(d){ S.access=d.access_token; S.refresh=d.refresh_token||S.refresh; S.istek=Date.now()+((d.expires_in||3600)*1000); spremi(); })
+    .catch(function(e){ odjava(); throw e; });
+}
+setInterval(function(){ if(S.refresh && S.istek && S.istek - Date.now() < 5*60*1000) obnovi().catch(function(){}); }, 60*1000);
+
+/* =================== PRIJAVA =================== */
+$('btnPrijava').onclick = function(){
+  var b=this, em=$('email').value.trim(), lo=$('lozinka').value;
+  $('prijavaGreska').textContent='';
+  if(!em || !lo){ $('prijavaGreska').textContent = S.jezik==='hr' ? 'Upiši e-poštu i lozinku.' : 'Enter e-mail and password.'; return; }
+  b.disabled=true;
+  fetch(BACKEND+'/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ email:em, password:lo }) })
+    .then(function(r){ return r.json().then(function(d){ if(!r.ok) throw new Error(d.error||'HTTP '+r.status); return d; }); })
+    .then(function(d){ S.access=d.access_token; S.refresh=d.refresh_token; S.istek=Date.now()+((d.expires_in||3600)*1000); spremi(); return kreni(); })
+    .catch(function(e){ $('prijavaGreska').textContent = /Invalid login/i.test(e.message) ? (S.jezik==='hr'?'Kriva e-pošta ili lozinka.':'Wrong e-mail or password.') : e.message; })
+    .then(function(){ b.disabled=false; });
+};
+$('lozinka').addEventListener('keydown', function(e){ if(e.key==='Enter') $('btnPrijava').click(); });
+function odjava(){ S.access=null; S.refresh=null; S.istek=0; S.tid=null; spremi(); pokazi('ekPrijava'); }
+$('btnJezik1').onclick = function(){ S.jezik = S.jezik==='hr'?'en':'hr'; spremi(); prevedi(); this.textContent=t('jezik'); };
+
+/* =================== MOJI TURNIRI =================== */
+var JA = null, ULOGE = [], TURNIRI = [];
+function kreni(){
+  return api('/api/me/roles').then(function(d){
+    JA = d; ULOGE = d.roles || []; TURNIRI = d.tournaments || [];
+    var ekipne = ULOGE.filter(function(u){ return u.role==='team' && u.teamId; });
+    if(S.tid && ekipne.some(function(u){ return u.tournamentId===S.tid; })) return otvoriTurnir(S.tid);
+    if(ekipne.length===1 && ULOGE.length===1) return otvoriTurnir(ekipne[0].tournamentId);
+    crtajTurnire(); pokazi('ekTurniri');
+    $('vrhEkipa').textContent = JA.person ? (JA.person.first_name+' '+JA.person.last_name+' · '+JA.person.bgf) : (JA.user && JA.user.email || '');
+    $('vrhTurnir').textContent = '';
+  });
+}
+function crtajTurnire(){
+  var html = ULOGE.map(function(u){
+    var tr = TURNIRI.find(function(x){ return x.id===u.tournamentId; }) || { name:u.tournamentId };
+    var uloga = { team: S.jezik==='hr'?'Moja ekipa':'My team', judge: S.jezik==='hr'?'Sudac':'Judge', organizer: S.jezik==='hr'?'Organizator':'Organiser',
+      assistant_judge: S.jezik==='hr'?'Pomoćni sudac':'Assistant judge', studio:'Studio' }[u.role] || u.role;
+    return '<button class="turnir" data-tid="'+esc(u.tournamentId)+'" data-uloga="'+esc(u.role)+'"><b>'+esc(tr.name)+'</b><span>'+esc(uloga)
+      +(tr.location ? ', '+esc(tr.location) : '')+(tr.start_date ? ', '+esc(tr.start_date.split('-').reverse().join('.')) : '')+'</span></button>';
+  }).join('');
+  $('popisTurnira').innerHTML = html || '<div class="prazno">'+esc(t('nemaTurnira'))+'</div>';
+  $('popisTurnira').querySelectorAll('.turnir').forEach(function(b){
+    b.onclick = function(){
+      if(b.dataset.uloga==='team') return otvoriTurnir(b.dataset.tid);
+      tost(t('sudacInfo'));
+    };
+  });
+}
+
+/* =================== TURNIRSKI NAČIN EKIPE =================== */
+var T = { id:null, turnir:null, ekipa:null, vrste:[], dan:null, otvoreno:false, sati:[] };
+function otvoriTurnir(tid){
+  var u = ULOGE.find(function(x){ return x.tournamentId===tid && x.role==='team'; });
+  if(!u){ crtajTurnire(); pokazi('ekTurniri'); return; }
+  S.tid = tid; spremi();
+  return api('/api/tournaments/'+tid+'/state').then(function(st){
+    T.id = tid; T.turnir = st.tournament;
+    T.ekipa = (st.teams||[]).find(function(x){ return String(x.id)===String(u.teamId); }) || { id:u.teamId, name:'', anglers:[] };
+    T.vrste = (st.ruleSpecies||[]);
+    T.sati = st.fishingHours || [];
+    izracunajDan();
+    $('vrhEkipa').textContent = T.ekipa.name || '';
+    $('vrhTurnir').textContent = T.turnir.name || '';
+    pokazi('ekEkipa'); crtajDan(); crtajBorbe();
+    osvjeziUlove(); osvjeziKacenja();
+  }).catch(function(e){ tost(e.message, true); crtajTurnire(); pokazi('ekTurniri'); });
+}
+function izracunajDan(){
+  var dd = (T.turnir && T.turnir.day_dates) || [];
+  var danas = danasISO(), i = dd.indexOf(danas);
+  if(i < 0 && T.turnir && T.turnir.start_date && !dd.length){
+    var poc = new Date(T.turnir.start_date+'T00:00:00'), sad = new Date(danas+'T00:00:00');
+    var raz = Math.round((sad-poc)/86400000); if(raz>=0 && raz < (T.turnir.days||1)) i = raz;
+  }
+  T.dan = i>=0 ? i+1 : null; T.otvoreno = T.dan != null;
+}
+function satiDana(){
+  var s = T.sati.find(function(x){ return Number(x.day_number)===Number(T.dan); });
+  return s ? (String(s.start_time||'').slice(0,5)+'–'+String(s.end_time||'').slice(0,5)) : '';
+}
+function crtajDan(){
+  $('danInfo').innerHTML = T.dan ? ('<span>'+(S.jezik==='hr'?'Dan ':'Day ')+'<b>'+T.dan+'</b>'+(satiDana() ? ', '+esc(satiDana()) : '')+'</span><span>'+esc(VERZIJA)+'</span>') : '<span></span><span>'+esc(VERZIJA)+'</span>';
+  $('btnRiba').disabled = !T.otvoreno;
+  $('zatvoreno').classList.toggle('skriveno', T.otvoreno);
+  $('zatvoreno').textContent = t('danZatvoren');
+}
+
+/* ---------- RIBA NA ŠTAPU ---------- */
+$('btnRiba').onclick = function(){
+  vibriraj([60,40,60]);
+  var kd = T.id+'-'+danasISO(); S.brojac = S.brojac || {}; S.brojac[kd] = (S.brojac[kd]||0) + 1;
+  var b = { no:S.brojac[kd], kljuc:kljuc(), pocetak:Date.now(), vrijeme:hhmm(), ribolovac:null, dbId:null, video1:false, lat:null, lon:null, dan:T.dan, tid:T.id, teamId:T.ekipa.id };
+  S.borbe.push(b); spremi(); crtajBorbe();
+  dohvatiPoziciju(function(p){ if(p){ b.lat=p.lat; b.lon=p.lon; spremi(); }
+    uRed('hook', { clientId:b.kljuc, teamId:b.teamId, hookTime:b.vrijeme, gpsLat:b.lat, gpsLon:b.lon, note:'Aplikacija' }, b.kljuc);
+  });
+  pitajRibolovca(b);
+};
+function dohvatiPoziciju(cb){
+  if(!navigator.geolocation) return cb(null);
+  var gotovo=false; var t0=setTimeout(function(){ if(!gotovo){ gotovo=true; cb(null); } }, 4000);
+  navigator.geolocation.getCurrentPosition(function(p){ if(gotovo) return; gotovo=true; clearTimeout(t0); cb({ lat:p.coords.latitude, lon:p.coords.longitude }); },
+    function(){ if(gotovo) return; gotovo=true; clearTimeout(t0); cb(null); }, { enableHighAccuracy:true, timeout:3500, maximumAge:20000 });
+}
+
+/* ---------- TKO JE NA ŠTAPU (O48) ---------- */
+function zauzeti(osim){ return S.borbe.filter(function(x){ return x!==osim && x.ribolovac; }).map(function(x){ return x.ribolovac; }); }
+function pitajRibolovca(b){
+  var zauz = zauzeti(b);
+  var lista = (T.ekipa.anglers||[]);
+  var html = '<h3>'+esc(t('tkoJeNaStapu'))+'</h3><div class="izbor">'
+    + lista.map(function(a){ var z = zauz.indexOf(String(a.id))>=0;
+        return '<button data-a="'+esc(a.id)+'"'+(z?' disabled title="na drugom štapu"':'')+'>'+esc(a.name)+(z?' · 🎣':'')+'</button>'; }).join('')
+    + '<button class="puno" data-a="">'+esc(t('kasnije'))+'</button></div>';
+  otvoriPlohu(html, function(el){
+    el.querySelectorAll('[data-a]').forEach(function(x){ x.onclick = function(){
+      var id = x.dataset.a; zatvoriPlohu();
+      if(!id) return;
+      b.ribolovac = String(id); spremi(); crtajBorbe();
+      posaljiRibolovca(b);
+    }; });
+  });
+}
+function posaljiRibolovca(b){
+  if(!b.ribolovac) return;
+  if(!b.dbId){ b.ribolovacCeka = true; spremi(); return; }   // pošalje se kad stigne broj kačenja
+  api('/api/tournaments/'+b.tid+'/hooked', { method:'PATCH', body:JSON.stringify({ id:b.dbId, anglerId:b.ribolovac }) })
+    .then(function(){ b.ribolovacCeka=false; spremi(); })
+    .catch(function(e){ if(e.odServera){ tost(e.message, true); if(e.status===409){ b.ribolovac=null; b.ribolovacCeka=false; spremi(); crtajBorbe(); } } else { b.ribolovacCeka=true; spremi(); } });
+}
+
+/* ---------- OTVORENE BORBE ---------- */
+function imeRibolovca(id){ var a=(T.ekipa.anglers||[]).find(function(x){ return String(x.id)===String(id); }); return a ? a.name : ''; }
+function crtajBorbe(){
+  var moje = S.borbe.filter(function(b){ return b.tid===T.id; });
+  $('borbe').innerHTML = moje.map(function(b, i){
+    return '<div class="borba" data-k="'+b.kljuc+'">'
+      + '<div class="borba-vrh"><span class="br">'+(S.jezik==='hr'?'Riba ':'Fish ')+(b.no||(i+1))+'</span><span>'+esc(b.vrijeme)+'</span><span class="vrijeme" data-pocetak="'+b.pocetak+'">'+trajanje(Date.now()-b.pocetak)+'</span></div>'
+      + (b.ribolovac
+          ? '<div class="ribolovac">🎣 '+esc(imeRibolovca(b.ribolovac))+' <span class="lokot">🔒 '+esc(t('ribolovacZak'))+'</span></div>'
+          : '<div class="ribolovac"><button class="mala plava" data-tko="'+b.kljuc+'">'+esc(t('tkoJeNaStapu'))+'</button></div>')
+      + '<div class="akcije">'
+      + '<button class="akcija'+(b.video1?' ok':'')+'" data-v1="'+b.kljuc+'">'+(b.video1?'✓ ':'')+esc(t('video1'))+'</button>'
+      + '<button class="akcija glavna" data-ishod="'+b.kljuc+'">'+esc(t('ishod'))+'</button>'
+      + '</div><div class="traka skriveno" data-traka="'+b.kljuc+'"><i></i></div></div>';
+  }).join('');
+  $('borbe').querySelectorAll('[data-tko]').forEach(function(x){ x.onclick=function(){ pitajRibolovca(nadjiBorbu(x.dataset.tko)); }; });
+  $('borbe').querySelectorAll('[data-ishod]').forEach(function(x){ x.onclick=function(){ pitajIshod(nadjiBorbu(x.dataset.ishod)); }; });
+  $('borbe').querySelectorAll('[data-v1]').forEach(function(x){ x.onclick=function(){
+    var b = nadjiBorbu(x.dataset.v1);
+    if(!b.dbId){ tost(S.jezik==='hr'?'Kačenje se još šalje — pokušaj za koju sekundu.':'Still sending the hook-up — try again in a moment.', true); return; }
+    snimiVideo({ hookedFishId:b.dbId, purpose:'hook', traka:'[data-traka="'+b.kljuc+'"]' }, function(){ b.video1=true; spremi(); crtajBorbe(); });
+  }; });
+}
+function nadjiBorbu(k){ return S.borbe.find(function(b){ return b.kljuc===k; }); }
+setInterval(function(){
+  $('sat').textContent = hhmm();
+  document.querySelectorAll('[data-pocetak]').forEach(function(el){ el.textContent = trajanje(Date.now()-Number(el.dataset.pocetak)); });
+}, 1000);
+
+/* ---------- ISHOD ---------- */
+function pitajIshod(b){
+  var odabir = { ishod:null, vrsta:null };
+  function crtaj(el){
+    var vrste = T.vrste.filter(function(v){
+      if(odabir.ishod==='released') return v.can_release !== false;
+      if(odabir.ishod==='boated') return v.can_boat !== false && !/^\s*ostalo\s*$/i.test(v.name||'');
+      return false;
+    });
+    var html = '<h3>'+esc(t('ishod'))+'</h3><div class="izbor">'
+      + '<button class="ishod-pusteno'+(odabir.ishod==='released'?' odabrano':'')+'" data-o="released">'+esc(t('pusteno'))+'</button>'
+      + '<button class="ishod-brod'+(odabir.ishod==='boated'?' odabrano':'')+'" data-o="boated">'+esc(t('naBrodu'))+'</button>'
+      + '<button class="puno ishod-otpala'+(odabir.ishod==='lost'?' odabrano':'')+'" data-o="lost">'+esc(t('otpala'))+'</button></div>';
+    if(odabir.ishod && odabir.ishod!=='lost'){
+      html += '<h3 style="margin-top:18px">'+esc(t('koja'))+'</h3><div class="izbor">'
+        + vrste.map(function(v){ return '<button data-v="'+esc(v.id)+'"'+(String(odabir.vrsta)===String(v.id)?' class="odabrano"':'')+'>'+esc(v.name)+'</button>'; }).join('') + '</div>';
+      if(odabir.ishod==='boated') html += '<div class="napomena">'+esc(t('ostaloSamo'))+'</div>';
+    }
+    var moze = odabir.ishod==='lost' || (odabir.ishod && odabir.vrsta);
+    html += '<button class="gumb" id="btnPosalji"'+(moze?'':' disabled')+'>'+esc(t('posalji'))+'</button>'
+      + '<button class="gumb drugi" id="btnOdustani">'+esc(t('odustani'))+'</button>';
+    el.innerHTML = html;
+    el.querySelectorAll('[data-o]').forEach(function(x){ x.onclick=function(){ odabir.ishod=x.dataset.o; odabir.vrsta=null; crtaj(el); }; });
+    el.querySelectorAll('[data-v]').forEach(function(x){ x.onclick=function(){ odabir.vrsta=x.dataset.v; crtaj(el); }; });
+    $('btnOdustani').onclick = zatvoriPlohu;
+    $('btnPosalji').onclick = function(){ zatvoriPlohu(); zavrsiBorbu(b, odabir.ishod, odabir.vrsta); };
+  }
+  otvoriPlohu('', crtaj);
+}
+function zavrsiBorbu(b, ishod, vrstaId){
+  vibriraj([35,35,35]);
+  S.borbe = S.borbe.filter(function(x){ return x!==b; }); spremi(); crtajBorbe();
+  dohvatiPoziciju(function(p){
+    uRed('catch', { clientId:b.kljuc+'-u', teamId:b.teamId, dayNumber:b.dan, hookTime:b.vrijeme, boatTime:hhmm(),
+      speciesId:vrstaId||null, outcome:ishod, gpsLat:b.lat, gpsLon:b.lon, boatGpsLat:p?p.lat:null, boatGpsLon:p?p.lon:null,
+      hookedFishId:b.dbId, hookKljuc:b.kljuc, comment:'Aplikacija' }, b.kljuc, ishod !== 'lost');
+  });
+}
+
+/* =================== RED ZA SLANJE (bez signala) =================== */
+function uRed(vrsta, tijelo, k, ponudiVideo2){
+  S.red.push({ vrsta:vrsta, tijelo:tijelo, kljuc:k, tid:T.id, video2:!!ponudiVideo2 }); spremi(); posaljiRed();
+}
+var saljem=false;
+function posaljiRed(){
+  if(saljem || !S.red.length) return crtajRedInfo();
+  saljem=true;
+  var r = S.red[0];
+  /* ulov čeka da kačenje dobije broj (veza na kačenje) */
+  if(r.vrsta==='catch' && !r.tijelo.hookedFishId){
+    var veza = (S.vezeKacenja||{})[r.kljuc]; if(veza) r.tijelo.hookedFishId = veza;
+  }
+  var put = '/api/tournaments/'+r.tid+(r.vrsta==='hook' ? '/hooked' : '/catches');
+  var tijelo = Object.assign({}, r.tijelo); delete tijelo.hookKljuc;
+  api(put, { method:'POST', body:JSON.stringify(tijelo) }).then(function(d){
+    S.red.shift(); signal(true);
+    if(r.vrsta==='hook' && d.hooked){
+      S.vezeKacenja = S.vezeKacenja || {}; S.vezeKacenja[r.kljuc] = d.hooked.id;
+      var b = nadjiBorbu(r.kljuc); if(b){ b.dbId = d.hooked.id; if(b.ribolovac) posaljiRibolovca(b); }
+      S.red.forEach(function(x){ if(x.vrsta==='catch' && x.kljuc===r.kljuc) x.tijelo.hookedFishId = d.hooked.id; });
+    }
+    if(r.vrsta==='catch'){
+      tost(S.jezik==='hr'?'Poslano sucu ✓':'Sent to judge ✓');
+      if(r.video2 && d.catch) ponudiVideo2(d.catch, r.tijelo.outcome);
+      osvjeziUlove();
+    }
+    spremi(); saljem=false; posaljiRed();
+  }).catch(function(e){
+    saljem=false;
+    if(e.odServera){            // server je rekao „ne” — ne ponavljaj u nedogled
+      S.red.shift(); spremi(); tost(e.message, true); signal(true);
+      if(r.vrsta==='hook'){ S.borbe = S.borbe.filter(function(b){ return b.kljuc!==r.kljuc; }); spremi(); crtajBorbe(); }
+      posaljiRed();
+    } else { signal(false); crtajRedInfo(); }
+  });
+  crtajRedInfo();
+}
+function crtajRedInfo(){
+  var n = S.red.length;
+  $('redInfo').classList.toggle('skriveno', !n);
+  $('redInfo').textContent = n ? t('cekaRed') + n : '';
+}
+function signal(ok){ $('signal').classList.toggle('ne', !ok); $('signal').textContent = ok ? t('naVezi') : t('bezSignala'); }
+setInterval(posaljiRed, 15000);
+window.addEventListener('online', function(){ signal(true); posaljiRed(); });
+window.addEventListener('offline', function(){ signal(false); });
+
+/* =================== VIDEO (R2) =================== */
+var cekaDatoteka = null;
+$('datoteka').addEventListener('change', function(){
+  var f = this.files && this.files[0]; this.value='';
+  if(f && cekaDatoteka){ var c = cekaDatoteka; cekaDatoteka=null; posaljiVideo(f, c); }
+});
+function snimiVideo(cilj, gotovo){ cilj.gotovo = gotovo; cekaDatoteka = cilj; $('datoteka').click(); }
+function posaljiVideo(f, c){
+  var traka = c.traka ? document.querySelector(c.traka) : null;
+  var opis = { hookedFishId:c.hookedFishId||null, catchId:c.catchId||null, kind:'video', purpose:c.purpose, contentType:f.type||'video/mp4', sizeBytes:f.size };
+  if(traka){ traka.classList.remove('skriveno'); traka.firstChild.style.width='3%'; }
+  tost(S.jezik==='hr'?'Šaljem video…':'Uploading video…');
+  api('/api/attachments/upload-url', { method:'POST', body:JSON.stringify(opis) }).then(function(u){
+    return new Promise(function(ok, ne){
+      var x = new XMLHttpRequest(); x.open('PUT', u.uploadUrl); x.setRequestHeader('Content-Type', u.contentType);
+      x.upload.onprogress = function(e){ if(traka && e.lengthComputable) traka.firstChild.style.width = Math.max(3, Math.round(e.loaded/e.total*100))+'%'; };
+      x.onload = function(){ x.status>=200 && x.status<300 ? ok(u) : ne(new Error('R2 '+x.status)); };
+      x.onerror = function(){ ne(new Error(S.jezik==='hr'?'Nema signala za video. Pokušaj ponovno kad bude signala.':'No signal for the video. Try again when you have signal.')); };
+      x.send(f);
+    });
+  }).then(function(u){
+    return api('/api/attachments', { method:'POST', body:JSON.stringify(Object.assign({}, opis, { key:u.key, recordedAt:new Date(f.lastModified||Date.now()).toISOString() })) });
+  }).then(function(){
+    tost(S.jezik==='hr'?'Video poslan sucu ✓':'Video sent to judge ✓'); vibriraj(40);
+    if(traka) traka.classList.add('skriveno');
+    if(c.gotovo) c.gotovo(); osvjeziUlove();
+  }).catch(function(e){ if(traka) traka.classList.add('skriveno'); tost(e.message, true); });
+}
+function ponudiVideo2(ulov, ishod){
+  var naslov = ishod==='boated' ? (S.jezik==='hr'?'Video 2 · izvlačenje':'Video 2 · boating') : (S.jezik==='hr'?'Video 2 · puštanje':'Video 2 · release');
+  otvoriPlohu('<h3>'+esc(naslov)+'</h3><p class="napomena">'+(S.jezik==='hr'?'Sudac treba video da prizna ribu. Može i kasnije, s popisa „Naše ribe”.':'The judge needs the video to accept the fish. You can also add it later from “Our fish”.')+'</p>'
+    + '<button class="gumb" id="btnV2">📹 '+esc(naslov)+'</button><button class="gumb drugi" id="btnV2k">'+esc(t('kasnije'))+'</button>', function(el){
+      $('btnV2').onclick = function(){ zatvoriPlohu(); snimiVideo({ catchId:ulov.id, purpose: ishod==='boated'?'boat':'release' }); };
+      $('btnV2k').onclick = zatvoriPlohu;
+    });
+}
+
+/* =================== NAŠE RIBE (stanje kod suca) =================== */
+var ULOVI = [];
+function osvjeziUlove(){
+  if(!T.id) return;
+  api('/api/tournaments/'+T.id+'/catch-status?teamId='+encodeURIComponent(T.ekipa.id)).then(function(d){
+    ULOVI = (d.catches||[]).slice().reverse(); crtajUlove(); signal(true);
+  }).catch(function(e){ if(!e.odServera) signal(false); });
+}
+function crtajUlove(){
+  if(!ULOVI.length){ $('ulovi').innerHTML = '<div class="prazno">'+esc(t('nemaUlova'))+'</div>'; return; }
+  var ishodi = { released:t('pusteno'), boated:t('naBrodu'), lost:t('otpala'), disq:'DQ' };
+  $('ulovi').innerHTML = ULOVI.map(function(c){
+    var mozePovuci = ['sent','received','proof_requested','proof_sent'].indexOf(c.stanje)>=0;
+    var mozePriloziti = mozePovuci && c.outcome!=='lost';
+    var fali = [c.fali && c.fali.video1 ? t('faliV1') : null, c.fali && c.fali.video2 ? t('faliV2') : null].filter(Boolean);
+    return '<div class="ulov"><div class="ulov-vrh"><b>'+esc(c.species || ishodi[c.outcome] || '')+'</b>'
+      + '<span>'+esc(ishodi[c.outcome]||'')+'</span><span class="t">'+(S.jezik==='hr'?'D':'D')+esc(c.day)+' · '+esc(String(c.hookTime||'').slice(0,5))+'</span></div>'
+      + '<span class="stanje st-'+esc(c.stanje)+'">'+esc(t('st_'+c.stanje))+(c.stanje==='recognized' && c.points!=null ? ' · '+esc(c.points)+(S.jezik==='hr'?' bod.':' pts') : '')+'</span>'
+      + (c.razlog ? '<div class="razlog">'+(c.stanje==='proof_requested'?'📩 ':'')+esc(c.razlog)+'</div>' : '')
+      + (fali.length && mozePriloziti ? '<div class="fali">⚠ '+esc(fali.join(', '))+'</div>' : '')
+      + ((mozePriloziti || mozePovuci) ? '<div class="male-akcije">'
+          + (mozePriloziti ? '<button class="mala plava" data-prilozi="'+esc(c.catchId)+'" data-out="'+esc(c.outcome)+'" data-v1="'+(c.fali&&c.fali.video1?1:0)+'">'+esc(t('prilozi'))+'</button>' : '')
+          + (mozePovuci ? '<button class="mala" data-povuci="'+esc(c.catchId)+'">'+esc(t('povuci'))+'</button>' : '')
+          + '</div>' : '')
+      + '</div>';
+  }).join('');
+  $('ulovi').querySelectorAll('[data-prilozi]').forEach(function(x){ x.onclick=function(){
+    var out = x.dataset.out, svrha2 = out==='boated'?'boat':'release';
+    otvoriPlohu('<h3>'+esc(t('prilozi'))+'</h3><div class="izbor">'
+      + '<button data-s="hook">'+esc(t('video1'))+'</button><button data-s="'+svrha2+'">'+esc(t('video2'))+'</button></div>'
+      + '<button class="gumb drugi" id="btnPk">'+esc(t('odustani'))+'</button>', function(el){
+        el.querySelectorAll('[data-s]').forEach(function(s){ s.onclick=function(){ zatvoriPlohu(); snimiVideo({ catchId:x.dataset.prilozi, purpose:s.dataset.s }); }; });
+        $('btnPk').onclick = zatvoriPlohu;
+      });
+  }; });
+  $('ulovi').querySelectorAll('[data-povuci]').forEach(function(x){ x.onclick=function(){
+    if(!confirm(S.jezik==='hr'?'Povući ovu prijavu? Riba se vraća kao borba u tijeku samo ako je bila vezana na kačenje.':'Withdraw this report?')) return;
+    api('/api/tournaments/'+T.id+'/catches?catchId='+encodeURIComponent(x.dataset.povuci), { method:'DELETE' })
+      .then(function(){ tost(S.jezik==='hr'?'Prijava povučena':'Report withdrawn'); osvjeziUlove(); osvjeziKacenja(); })
+      .catch(function(e){ tost(e.message, true); });
+  }; });
+}
+setInterval(function(){ if(T.id && !document.hidden) osvjeziUlove(); }, 20000);
+
+/* Kačenja sa servera: ako je ekipa povukla prijavu, kačenje se vraća „u tijeku”
+   — i ako je mobitel restartan, borbe se slože iz baze. */
+function osvjeziKacenja(){
+  if(!T.id) return;
+  api('/api/tournaments/'+T.id+'/hooked').then(function(d){
+    var otvorena = (d.hooked||[]).filter(function(h){ return String(h.team_id)===String(T.ekipa.id) && !h.resolved; });
+    otvorena.forEach(function(h){
+      var lok = S.borbe.find(function(b){ return b.dbId===h.id || (h.client_id && b.kljuc===h.client_id); });
+      if(lok){ if(!lok.dbId){ lok.dbId=h.id; } return; }
+      if(S.red.some(function(r){ return r.vrsta==='catch' && r.tijelo.hookedFishId===h.id; })) return;
+      var poc = h.created_at ? Date.parse(h.created_at) : Date.now();
+      S.borbe.push({ kljuc:h.client_id || ('s'+h.id), pocetak:poc, vrijeme:String(h.hook_time||'').slice(0,5), ribolovac:h.angler_id ? String(h.angler_id) : null,
+        dbId:h.id, video1:false, lat:h.gps_lat, lon:h.gps_lon, dan:T.dan, tid:T.id, teamId:T.ekipa.id });
+    });
+    spremi(); crtajBorbe();
+  }).catch(function(){});
+}
+
+/* =================== PLOHA I IZBORNIK =================== */
+function otvoriPlohu(html, poslije){ var p=$('ploha'); p.innerHTML=html; $('zastor').classList.remove('skriveno'); if(poslije) poslije(p); }
+function zatvoriPlohu(){ $('zastor').classList.add('skriveno'); $('ploha').innerHTML=''; }
+$('zastor').addEventListener('click', function(e){ if(e.target===this) zatvoriPlohu(); });
+$('btnIzbornik').onclick = function(){
+  var ime = JA && JA.person ? (JA.person.first_name+' '+JA.person.last_name+' · '+JA.person.bgf) : (JA && JA.user && JA.user.email || '');
+  otvoriPlohu('<h3>'+esc(ime)+'</h3><div class="izbor">'
+    + '<button data-m="turniri">'+esc(t('drugiTurnir'))+'</button>'
+    + '<button data-m="jezik">'+esc(t('jezik'))+'</button>'
+    + '<button data-m="tema">'+esc(t('tema'))+': '+esc(S.tema)+'</button>'
+    + '<button data-m="odjava">'+esc(t('odjava'))+'</button></div>', function(el){
+      el.querySelectorAll('[data-m]').forEach(function(x){ x.onclick=function(){
+        var m=x.dataset.m; zatvoriPlohu();
+        if(m==='turniri'){ S.tid=null; spremi(); crtajTurnire(); pokazi('ekTurniri'); }
+        if(m==='jezik'){ S.jezik = S.jezik==='hr'?'en':'hr'; spremi(); prevedi(); if(T.id){ crtajDan(); crtajBorbe(); crtajUlove(); } else crtajTurnire(); }
+        if(m==='tema'){ S.tema = { auto:'light', light:'dark', dark:'auto' }[S.tema]; spremi(); postaviTemu(); }
+        if(m==='odjava'){ if(S.red.length && !confirm(S.jezik==='hr'?'Neke prijave još nisu poslane. Odjaviti se svejedno?':'Some reports are not sent yet. Sign out anyway?')) return; odjava(); }
+      }; });
+    });
+};
+
+/* =================== START =================== */
+postaviTemu(); prevedi(); $('btnJezik1').textContent = t('jezik');
+if(S.access){ kreni().catch(function(e){ if(e.status===401) odjava(); else { tost(e.message, true); pokazi('ekPrijava'); } }); }
+else pokazi('ekPrijava');
+posaljiRed();
+</script>
+</body>
+</html>
