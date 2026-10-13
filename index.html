@@ -485,7 +485,7 @@ body.tmmod .uz{color:#0456E8!important}
 .kkoraci span.cek{background:#fef3c7;color:#92400e}
 .info .brzo, main > .brzo{margin:0 0 12px}
 /* 505 · oznaka verzije (da se vidi koja je verzija na mobitelu) */
-body::after{content:'v512';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
+body::after{content:'v514';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
 /* 500 · video koji putuje */
 .stchip.salje{background:#fef3c7!important;color:#92400e!important}
 /* 499 · statusna traka: „Izađi” uvijek vidljiv i na uskom mobitelu */
@@ -1517,6 +1517,8 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     'RIBOLOV':['FISHING','FISCHEN','PESCA'], 'DANAS SE NE LOVI':['NO FISHING TODAY','HEUTE KEIN FISCHEN','OGGI NIENTE PESCA'],
     'do kraja':['to end','bis Ende','alla fine'], 'ribolov završen':['fishing over','Fischen beendet','pesca finita'],
     'veza ✓':['online ✓','online ✓','online ✓'], 'čeka':['waiting','wartet','in attesa'],
+    'Video je velik':['The video is large','Das Video ist groß','Il video è grande'],
+    'slanje može trajati nekoliko minuta. Brže: 📹 Snimi u aplikaciji.':['sending may take a few minutes. Faster: 📹 Record in the app.','das Senden kann einige Minuten dauern. Schneller: 📹 In der App aufnehmen.','l’invio può richiedere alcuni minuti. Più veloce: 📹 Registra nell’app.'],
     'sudac primio':['judge received','Richter erhalten','ricevuto dal giudice'], 'sudac traži dokaz':['judge asks for proof','Richter verlangt Beweis','il giudice chiede una prova'],
     'dokaz poslan':['proof sent','Beweis gesendet','prova inviata'], 'izvagano':['weighed','gewogen','pesato'], 'priznato':['accepted','anerkannt','riconosciuto'],
     'odbijeno':['rejected','abgelehnt','respinto'], 'povučeno':['withdrawn','zurückgezogen','ritirato'], 'unio sudac':['entered by judge','vom Richter eingetragen','inserito dal giudice'], 'spojeno':['merged','zusammengeführt','unito'],
@@ -1706,7 +1708,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
       P.sati = fh ? { od:String(fh.start_time || '').slice(0,5), do:String(fh.end_time || '').slice(0,5) } : null;
       /* v69 podaci → pravi */
       TM.naBrodu = (ek.anglers || []).map(function(a){ return a.name; });
-      if (!prviPut){ osvjeziPrikaz(); return; }                 // samo osvježenje: borbe i DANAS ostaju
+      if (!prviPut){ TMS = P.dan ? 'ribolov' : 'gotovo'; osvjeziPrikaz(); return; }   // samo osvježenje: borbe i DANAS ostaju (514: dan/satnica)
       TM.otvorena = (M.otv || []).filter(function(o){ return o.tid === tid; }).map(function(o){
         return Object.assign({}, o, { sek:Math.max(0, Math.round((Date.now() - (o.t0 || Date.now())) / 1000)), javiGrupi:false });
       });
@@ -1741,7 +1743,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
   };
   P.statusTekst = function(){ return P.dan ? ('● ' + t('RIBOLOV')) : '■ ' + t('DANAS SE NE LOVI'); };   // 499: kratko — sati su gore („do kraja”), „Izađi” mora stati
   /* 499: kratko i samo kad nešto treba vidjeti (bez signala / čeka slanje / video čeka) */
-  P.ostTekst = function(){ return [P.veza ? '' : t('✕ bez signala'), M.red.length ? '⏳ ' + M.red.length : '', P.videaCeka ? '🎥 ' + P.videaCeka : ''].filter(Boolean).join(' · '); };
+  P.ostTekst = function(){ return [P.veza ? '' : t('✕ bez signala'), M.red.length ? '⏳ ' + M.red.length : '', P.videaCeka ? '🎥 ' + P.videaCeka + (P.napredak != null ? ' · ' + P.napredak + ' %' : '') : ''].filter(Boolean).join(' · '); };
 
   /* ---------- red za slanje ---------- */
   function uRed(vrsta, tijelo, k){ M.red.push({ vrsta:vrsta, tijelo:tijelo, kljuc:k, tid:P.tid }); spremi(); posaljiRed(); }
@@ -1962,7 +1964,9 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
   function oznaciSlanje(){
     TM.povijest.forEach(function(h){
       var moji = P.cekaju.filter(function(m){
-        return (h.catchId && (m.catchId === h.catchId || (m.ulovKljuc && M.uloviId && M.uloviId[m.ulovKljuc] === h.catchId))) || (h.kljuc && m.ulovKljuc === h.kljuc);
+        return (h.catchId && (m.catchId === h.catchId || (m.ulovKljuc && M.uloviId && M.uloviId[m.ulovKljuc] === h.catchId)))
+          || (h.kljuc && (m.ulovKljuc === h.kljuc || m.kac === h.kljuc))
+          || (h.hookId && m.kac && M.veze[m.kac] === h.hookId);              // 514: video 1 priložen na kačenju
       });
       h.vkS = moji.some(function(m){ return m.purpose === 'hook'; });
       h.viS = moji.some(function(m){ return m.purpose === 'release' || m.purpose === 'boat'; });
@@ -2024,6 +2028,8 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
        „Iz galerije” za već snimljeno (sudac ga ionako pušta bez zvuka). */
     izborVidea(function(dat){ primi(dat); });
     function primi(dat){
+      var mb = Math.round((dat.size || 0) / 1048576);
+      if (mb >= 60) tost(t('Video je velik') + ' (' + mb + ' MB) — ' + t('slanje može trajati nekoliko minuta. Brže: 📹 Snimi u aplikaciji.'));
       var url = URL.createObjectURL(dat) + '#t=0.1';
       if (cilj.kac){ var oz = TM.otvorena.find(function(o){ return o.kljuc === cilj.kac; }); if (oz) oz.vkSalje = true; }
       var meta = cilj.ulovKljuc ? { ulovKljuc:cilj.ulovKljuc, purpose:cilj.purpose }
@@ -2092,7 +2098,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     var g = this;
     if (kamRec && kamRec.state === 'recording'){ kamRec.stop(); return; }
     var tip = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(function(x){ try{ return MediaRecorder.isTypeSupported(x); }catch(e){ return false; } }) || '';
-    try{ kamRec = new MediaRecorder(kamTok, tip ? { mimeType:tip, videoBitsPerSecond:2500000 } : undefined); }catch(e){ tost('Snimanje nije uspjelo — izaberi video iz galerije.', true); kamStani(); return; }
+    try{ kamRec = new MediaRecorder(kamTok, tip ? { mimeType:tip, videoBitsPerSecond:1600000 } : undefined); /* 514: ~12 MB/min, dovoljno za suca */ }catch(e){ tost('Snimanje nije uspjelo — izaberi video iz galerije.', true); kamStani(); return; }
     kamDijelovi = [];
     kamRec.ondataavailable = function(e){ if (e.data && e.data.size) kamDijelovi.push(e.data); };
     kamRec.onstop = function(){
@@ -2114,7 +2120,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     return api('/api/attachments/upload-url', { method:'POST', body:JSON.stringify(opis) }).then(function(u){
       return new Promise(function(ok, ne){
         var x = new XMLHttpRequest(); x.open('PUT', u.uploadUrl); x.setRequestHeader('Content-Type', u.contentType);
-        x.upload.onprogress = function(e){ if (e.lengthComputable) tostEl.textContent = t('Šaljem video sucu…') + ' ' + Math.round(e.loaded / e.total * 100) + ' %'; };
+        x.upload.onprogress = function(e){ if (e.lengthComputable){ P.napredak = Math.round(e.loaded / e.total * 100); var o = document.querySelector('.tmstatus .ost'); if (o) o.textContent = P.ostTekst(); } };
         x.onload = function(){ x.status >= 200 && x.status < 300 ? ok(u) : ne(new Error('Spremište javlja ' + x.status)); };
         x.onerror = function(){ ne(new Error('Nema signala za video. Šalje se samo kad signal dođe.')); };
         x.ontimeout = x.onerror; x.timeout = 10 * 60 * 1000;
@@ -2122,8 +2128,8 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
       });
     }).then(function(u){
       return api('/api/attachments', { method:'POST', body:JSON.stringify(Object.assign({}, opis, { key:u.key, recordedAt:z.snimljeno })) });
-    }).then(function(){ tost('Video poslan sucu ✓'); if (navigator.vibrate) navigator.vibrate(40); })
-      .catch(function(er){ if (!er.odServera) tost(er.message, true); throw er; });
+    }).then(function(){ P.napredak = null; tost('Video poslan sucu ✓'); if (navigator.vibrate) navigator.vibrate(40); })
+      .catch(function(er){ P.napredak = null; if (!er.odServera) tost(er.message, true); throw er; });
   }
 
   /* ---------- sa servera: kačenja u tijeku i „DANAS” sa stanjem kod suca ---------- */
@@ -2147,7 +2153,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
       dokaz: c.stanje === 'proof_requested' ? (c.razlog || 'Sudac traži dokaz.') : null,
       razlog: c.stanje === 'rejected' ? c.razlog : null, bod: c.points, izvor: sudac ? 'sudac' : null,
       kor: ev.map(function(e){ return [hhmm(e.at), t(KOR[e.kind] || e.kind) + (e.note ? ' · ' + e.note : '')]; }),
-      catchId:c.catchId, nDod: pr.filter(function(p){ return p.kind === 'video' && p.purpose === 'other'; }).length };
+      catchId:c.catchId, hookId:c.hookId || null, nDod: pr.filter(function(p){ return p.kind === 'video' && p.purpose === 'other'; }).length };
   }
   function osvjezi(){
     if (!P.on || !P.tid) return;
@@ -2194,6 +2200,16 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
   }
   P.osvjezi = osvjezi;
   setInterval(function(){ if (P.on && !document.hidden) osvjezi(); }, 20000);
+  /* 514: satnica (admin je može promijeniti) i dan (ponoć) — osvježi stanje turnira */
+  P.zadnjiDatum = danasISO();
+  function osvjeziTurnir(){ if (P.on && P.tid && P.ekipa) otvoriTurnir(P.tid, P.ekipa.id); }
+  setInterval(function(){
+    if (!P.on) return;
+    if (danasISO() !== P.zadnjiDatum){ P.zadnjiDatum = danasISO(); osvjeziTurnir(); return; }   // novi dan
+    if (!document.hidden) osvjeziTurnir();
+  }, 5 * 60000);
+  setInterval(function(){ if (P.on && danasISO() !== P.zadnjiDatum){ P.zadnjiDatum = danasISO(); osvjeziTurnir(); } }, 60000);
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden && P.on) osvjeziTurnir(); });
   document.addEventListener('visibilitychange', function(){ if (!document.hidden && P.on) osvjezi(); });
 
   /* ---------- jezik: jezik mobitela, dok korisnik sam ne izabere (506) ---------- */
