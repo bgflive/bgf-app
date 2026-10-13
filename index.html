@@ -485,7 +485,7 @@ body.tmmod .uz{color:#0456E8!important}
 .kkoraci span.cek{background:#fef3c7;color:#92400e}
 .info .brzo, main > .brzo{margin:0 0 12px}
 /* 505 · oznaka verzije (da se vidi koja je verzija na mobitelu) */
-body::after{content:'v516';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
+body::after{content:'v521';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
 /* 515 · stanje ribe bojom ruba (Nikola 13.10.) */
 .ulov.rub-zeleno{border-left:5px solid #16a34a;border-radius:0 12px 12px 0}
 .ulov.rub-plavo{border-left:5px solid #2563eb;border-radius:0 12px 12px 0}
@@ -501,6 +501,24 @@ body::after{content:'v516';position:fixed;right:6px;bottom:calc(env(safe-area-in
 .tmstatus .izl{flex:0 0 auto;margin-left:auto}
 /* 487 · pravi spoj: prikazni prekidači stanja skriveni u pravom radu */
 .pravo .tmprikaz{display:none!important}
+
+/* 518 · UJEDNAČENO (Nikola: „previše boja”): bijela kartica, boja stanja samo na lijevoj traci,
+   sive oznake (boja samo na ✓ ⏳ ✗), isti okvir za sve što traži radnju, gumbi BGF plavi */
+body.pravo:not(.tamno) .ulov{background:#fff!important;border:1px solid #e2e8f0;border-radius:12px!important;margin:8px 0;width:100%;padding:12px}
+body.pravo:not(.tamno) .ulov:nth-child(odd){background:#fff!important}
+body.pravo:not(.tamno) .ulov.rub-zeleno{border-left:5px solid #16a34a}
+body.pravo:not(.tamno) .ulov.rub-plavo{border-left:5px solid #2563eb}
+body.pravo:not(.tamno) .ulov.rub-zuto{border-left:5px solid #f59e0b}
+body.pravo:not(.tamno) .ulov.rub-crveno{border-left:5px solid #dc2626;background:#fff!important}
+body.pravo:not(.tamno) .stchip{background:#f1f5f9!important;color:#334155!important;font-weight:700}
+body.pravo .stchip .vz{font-style:normal;font-weight:900}
+body.pravo .stchip .vz.da{color:#16a34a} body.pravo .stchip .vz.cek{color:#d97706} body.pravo .stchip .vz.ne{color:#dc2626}
+body.pravo:not(.tamno) .faliv, body.pravo:not(.tamno) .dokaz, body.pravo:not(.tamno) .odbij{background:#f8fafc!important;border:1px solid #e2e8f0!important;border-left:4px solid #f59e0b!important;color:#1e293b!important;font-weight:600}
+body.pravo:not(.tamno) .odbij{border-left-color:#dc2626!important}
+body.pravo:not(.tamno) .faliv button, body.pravo:not(.tamno) .faliv .skgumbi button, body.pravo:not(.tamno) .dokaz button, body.pravo:not(.tamno) .skgumbi button{background:#0456E8!important;color:#fff!important}
+body.pravo:not(.tamno) .danasbaner{background:#fff!important;border:1px solid #e2e8f0;color:#1e293b!important}
+body.pravo:not(.tamno) .danasbaner.zuto{border-left:5px solid #f59e0b}
+body.pravo:not(.tamno) .danasbaner.crveno{border-left:5px solid #dc2626}
 </style>
 </head>
 <body>
@@ -888,7 +906,7 @@ const P = {
         ${PONISTI ? `<div class="ponisti">Kačenje ${TM.povijest.length + TM.otvorena.findIndex(o => o.n === PONISTI.n) + 1} zapisano u ${PONISTI.v}<button data-ponisti>Poništi</button></div>` : ''}
         <div class="odj">🎣 DANAS · ${TM.povijest.length} kačenja · ${TM.povijest.filter(h => h.tip === 'brod' || h.tip === 'pust').length} ulova</div>
         ${(window.PRAVO&&PRAVO.on) ? PRAVO.banerDanas() : ''}
-        ${TM.povijest.map((h, i) => { const kb = TM.povijest.length - i; const ub = TM.povijest.slice(i).filter(x => x.tip === 'brod' || x.tip === 'pust').length; return `<div class="ulov${(window.PRAVO&&PRAVO.on&&h.boja) ? ' rub-' + h.boja : ''}" data-ulovi="${i}"><span class="v"><span class="rbr">K${kb}</span>${h.v}<small>${h.tip === 'brod' || h.tip === 'pust' ? 'ulov ' + ub : ((window.PRAVO&&PRAVO.on) ? PRAVO.danTekst() : 'Dan 2')}</small></span>${bico(h.tip)}<div><b>${h.t}</b>${h.izvor ? `<span class="izvor">${h.izvor === 'WhatsApp' ? '💬' : '📻'} javljeno ${h.izvor === 'VHF' ? 'VHF-om' : 'WhatsAppom'} — aplikacija nije radila</span>` : ''}${h.red ? '<span class="stchip fali">⏳ čeka signal</span> ' : ''}<span class="stchip st-${h.st.replace(/ /g, '-')}" data-ulst="${i}">${h.st === 'priznato' && h.bod ? '✓ priznato · ' + h.bod.toLocaleString('hr') : h.st}</span>${''/* 502: „Povuci” maknut (Nikola 13.10.: lako se stisne slučajno) — ispravak radi sudac */}${h.vid !== null && h.vid !== undefined ? (() => { const vk = h.vk ?? h.vid, vi = h.vi ?? h.vid; return ` <span class="stchip ${vk ? 'ok' : (h.vkS ? 'salje' : 'fali')}">🎥 video 1 ${vk ? '✓' : (h.vkS ? '⏳' : '✗')}</span> <span class="stchip ${vi ? 'ok' : (h.viS ? 'salje' : 'fali')}">🎥 video 2 ${vi ? '✓' : (h.viS ? '⏳' : '✗')}</span>`; })() : ''}${h.sl ? ` <span class="stchip ok">📷 slika${(h.ns || 1) > 1 ? ' ×' + h.ns : ''} ✓</span>` : ''}${h.st === 'poslano sucu' && h.vid && !(window.PRAVO&&PRAVO.on) ? '<div class="salje"><i><span style="width:60%"></span></i><small>Video se šalje… 60 % · bez zvuka</small></div>' : ''}${h.st === 'traži dokaz' ? `<div class="dokaz">⚖ <b>Sudac traži dokaz:</b> ${h.dokaz}<button data-pril="h:${i}:v">🎥 Pošalji dokaz</button></div>` : ''}${h.st === 'odbijeno' ? `<div class="odbij">✕ <b>Nije priznato:</b> ${h.razlog}<button data-ulprig="${i}">Prigovor (do 17:30)</button></div>` : ''}${(() => { if (h.vid === null || h.vid === undefined) return ''; if ((window.PRAVO&&PRAVO.on) && h.st === 'traži dokaz') return ''; const vk = h.vk ?? h.vid, vi = h.vi ?? h.vid; if ((vk || h.vkS) && (vi || h.viS)) return ''; return `<div class="faliv">⚠ Fali video — sudac ga treba za priznavanje${(window.PRAVO&&PRAVO.on&&h.boja==='crveno'&&h.starostMin) ? ' · ' + h.starostMin + ' min' : ''}<div class="skgumbi" style="margin-top:6px">${vk || h.vkS ? '' : `<button data-hv="${i}:k">📎 Video 1 · kačenje</button>`}${vi || h.viS ? '' : `<button data-hv="${i}:i">📎 Video 2 · ${h.tip === 'brod' ? 'izvlačenje' : 'puštanje'}</button>`}</div></div>`; })()}${h.vid !== null && h.st !== 'priznato' && h.st !== 'odbijeno' ? `<div class="prilbar mali"><button data-pril="h:${i}:v">＋ 🎥 ${h.vid ? 'Još video' : 'Video'}</button><button data-pril="h:${i}:s">＋ 📷 ${h.sl ? 'Još slika' : 'Slika'}</button></div>` : ''}</div></div>`; }).join('')}`}</main>`,
+        ${TM.povijest.map((h, i) => { const kb = TM.povijest.length - i; const ub = TM.povijest.slice(i).filter(x => x.tip === 'brod' || x.tip === 'pust').length; return `<div class="ulov${(window.PRAVO&&PRAVO.on&&h.boja) ? ' rub-' + h.boja : ''}" data-ulovi="${i}"><span class="v"><span class="rbr">${(window.PRAVO&&PRAVO.on) ? '#' : 'K'}${kb}</span>${h.v}<small${(window.PRAVO&&PRAVO.on) ? ' data-bezprijevoda' : ''}>${(window.PRAVO&&PRAVO.on) ? PRAVO.ulovDan(h, ub) : (h.tip === 'brod' || h.tip === 'pust' ? 'ulov ' + ub : 'Dan 2')}</small></span>${bico(h.tip)}<div><b>${h.t}</b>${h.izvor ? `<span class="izvor">${h.izvor === 'WhatsApp' ? '💬' : '📻'} javljeno ${h.izvor === 'VHF' ? 'VHF-om' : 'WhatsAppom'} — aplikacija nije radila</span>` : ''}${h.red ? '<span class="stchip fali">⏳ čeka signal</span> ' : ''}<span class="stchip st-${h.st.replace(/ /g, '-')}" data-ulst="${i}">${h.st === 'priznato' && h.bod ? '✓ priznato · ' + h.bod.toLocaleString('hr') : h.st}</span>${''/* 502: „Povuci” maknut (Nikola 13.10.: lako se stisne slučajno) — ispravak radi sudac */}${h.vid !== null && h.vid !== undefined ? (() => { const vk = h.vk ?? h.vid, vi = h.vi ?? h.vid; return ` <span class="stchip ${vk ? 'ok' : (h.vkS ? 'salje' : 'fali')}">🎥 video 1 <i class="vz ${vk ? 'da' : (h.vkS ? 'cek' : 'ne')}">${vk ? '✓' : (h.vkS ? '⏳' : '✗')}</i></span> <span class="stchip ${vi ? 'ok' : (h.viS ? 'salje' : 'fali')}">🎥 video 2 <i class="vz ${vi ? 'da' : (h.viS ? 'cek' : 'ne')}">${vi ? '✓' : (h.viS ? '⏳' : '✗')}</i></span>`; })() : ''}${h.sl ? ` <span class="stchip ok">📷 slika${(h.ns || 1) > 1 ? ' ×' + h.ns : ''} ✓</span>` : ''}${h.st === 'poslano sucu' && h.vid && !(window.PRAVO&&PRAVO.on) ? '<div class="salje"><i><span style="width:60%"></span></i><small>Video se šalje… 60 % · bez zvuka</small></div>' : ''}${h.st === 'traži dokaz' ? `<div class="dokaz">⚖ <b>Sudac traži dokaz:</b> ${h.dokaz}<button data-pril="h:${i}:v">🎥 Pošalji dokaz</button></div>` : ''}${h.st === 'odbijeno' ? `<div class="odbij">✕ <b>Nije priznato:</b> ${h.razlog}<button data-ulprig="${i}">Prigovor (do 17:30)</button></div>` : ''}${(() => { if (h.vid === null || h.vid === undefined) return ''; if ((window.PRAVO&&PRAVO.on) && h.st === 'traži dokaz') return ''; const vk = h.vk ?? h.vid, vi = h.vi ?? h.vid; if ((vk || h.vkS) && (vi || h.viS)) return ''; return `<div class="faliv">⚠ Fali video — sudac ga treba za priznavanje${(window.PRAVO&&PRAVO.on&&h.boja==='crveno'&&h.starostMin) ? ' · ' + h.starostMin + ' min' : ''}<div class="skgumbi" style="margin-top:6px">${vk || h.vkS ? '' : `<button data-hv="${i}:k">📎 Video 1 · kačenje</button>`}${vi || h.viS ? '' : `<button data-hv="${i}:i">📎 Video 2 · ${h.tip === 'brod' ? 'izvlačenje' : 'puštanje'}</button>`}</div></div>`; })()}${h.vid !== null && h.st !== 'priznato' && h.st !== 'odbijeno' ? `<div class="prilbar mali"><button data-pril="h:${i}:v">＋ 🎥 ${h.vid ? 'Još video' : 'Video'}</button><button data-pril="h:${i}:s">＋ 📷 ${h.sl ? 'Još slika' : 'Slika'}</button></div>` : ''}</div></div>`; }).join('')}`}</main>`,
       zona: `<main><div class="offline">📥 Karta zone i krugovi spremljeni na mobitel — rade bez signala</div><div class="karta" style="background:#0a3d6b"><svg viewBox="0 0 320 330"><polygon points="30,30 290,22 300,300 40,310" fill="rgba(34,197,94,.10)" stroke="#22C55E" stroke-width="2"/><circle cx="250" cy="70" r="26" fill="rgba(239,68,68,.18)" stroke="#EF4444" stroke-dasharray="4 3"/><text x="226" y="74" fill="#fecaca" font-size="9">Brak Svetac</text><line x1="160" y1="26" x2="170" y2="305" stroke="#22C55E" stroke-dasharray="5 5" opacity=".7"/><line x1="35" y1="170" x2="295" y2="160" stroke="#22C55E" stroke-dasharray="5 5" opacity=".7"/>${[['A',95,100],['B',225,95],['D',100,245],['C',230,240]].map(([n, x, y]) => `<text x="${x}" y="${y}" fill="#86efac" font-size="18" font-weight="800">${n}</text>`).join('')}<g transform="translate(215,205) rotate(35)"><path d="M0,-14 L9,10 L0,5 L-9,10Z" fill="#fff"/></g><circle cx="190" cy="250" r="5" fill="#EF4444"/><text x="198" y="254" fill="#fecaca" font-size="11">kačenje 08:12</text></svg></div>
         <div class="info" style="margin-top:12px"><div><b>Status</b><span style="color:#16a34a;font-weight:800">● u zoni · sektor C</span></div><div><b>Do granice</b><span>1,8 NM → istok</span></div><div><b>Pozicija</b><span>42°38,180′ N · 017°58,261′ E</span></div><div><b>Kurs · brzina</b><span>035° · 6,2 čv</span></div><div><b>Najbliži brod</b><span>TRITON · 0,9 NM</span></div><div><b>⬇ Moj trag (GPX)</b><span>nakon ribolova ›</span></div><div><b>⭕ Zabranjeni krug</b><span>Brak Svetac · 1,4 NM</span></div></div>
         <p class="opis" style="margin-top:8px">Upozorenje stiže 0,5 NM prije granice i kad je drugi brod bliže od 0,5 NM.</p></main>`,
@@ -1525,7 +1543,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     'Dan':['Day','Tag','Giorno'], 'danas se ne lovi':['no fishing today','heute kein Fischen','oggi niente pesca'],
     'RIBOLOV':['FISHING','FISCHEN','PESCA'], 'DANAS SE NE LOVI':['NO FISHING TODAY','HEUTE KEIN FISCHEN','OGGI NIENTE PESCA'],
     'do kraja':['to end','bis Ende','alla fine'], 'ribolov završen':['fishing over','Fischen beendet','pesca finita'],
-    'veza ✓':['online ✓','online ✓','online ✓'], 'čeka':['waiting','wartet','in attesa'],
+    'veza ✓':['online ✓','online ✓','online ✓'], 'čeka':['waiting','wartet','in attesa'], 'ulov':['catch','Fang','cattura'],
     'Poruka u grupu nakon kačenja':['Group message after a strike','Gruppennachricht nach einem Biss','Messaggio al gruppo dopo un’abboccata'],
     'uključeno':['on','an','attivo'], 'isključeno':['off','aus','disattivo'],
     'Poruka u grupu: uključeno':['Group message: on','Gruppennachricht: an','Messaggio al gruppo: attivo'],
@@ -2011,6 +2029,10 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
   P.opcijaGrupa = function(){
     return '<div data-grupa style="cursor:pointer"><b>💬 ' + e_(t('Poruka u grupu nakon kačenja')) + '</b><span>' + e_(M.grupaDa ? t('uključeno') : t('isključeno')) + ' ›</span></div>';
   };
+  /* 520: ispod #broja i vremena: „ulov 12 · Dan 1” (otpalo „— · Dan 1”), na jeziku aplikacije */
+  P.ulovDan = function(h, ub){
+    return ((h.tip === 'brod' || h.tip === 'pust') ? t('ulov') + ' ' + ub : '—') + '<br>' + t('Dan') + ' ' + (P.dan || '–');   // 521: dan u svom redu
+  };
   P.banerDanas = function(){
     var crv = TM.povijest.map(function(h, i){ return [h, i]; }).filter(function(x){ return x[0].boja === 'crveno' && x[0].fali; });
     var dok = TM.povijest.map(function(h, i){ return [h, i]; }).filter(function(x){ return x[0].st === 'traži dokaz'; });
@@ -2033,7 +2055,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     TM.povijest.forEach(function(h, i){
       var id = h.catchId || h.kljuc; if (!id) return;
       var z = M.podsj[id] || (M.podsj[id] = { n:0, zad:0, dokaz:false });
-      var kb = 'K' + (n - i);
+      var kb = '#' + (n - i);
       if (h.st === 'traži dokaz' && !z.dokaz){
         z.dokaz = true; tost(kb + ': ' + t('Sudac traži dokaz') + (h.dokaz ? ' — ' + h.dokaz : ''), true);
         try{ navigator.vibrate && navigator.vibrate([250, 120, 250]); }catch(e){}
