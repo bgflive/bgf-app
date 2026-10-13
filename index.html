@@ -485,7 +485,7 @@ body.tmmod .uz{color:#0456E8!important}
 .kkoraci span.cek{background:#fef3c7;color:#92400e}
 .info .brzo, main > .brzo{margin:0 0 12px}
 /* 505 · oznaka verzije (da se vidi koja je verzija na mobitelu) */
-body::after{content:'v524';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
+body::after{content:'v526';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
 /* 515 · stanje ribe bojom ruba (Nikola 13.10.) */
 .ulov.rub-zeleno{border-left:5px solid #16a34a;border-radius:0 12px 12px 0}
 .ulov.rub-plavo{border-left:5px solid #2563eb;border-radius:0 12px 12px 0}
@@ -1509,6 +1509,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
   try{ M = JSON.parse(localStorage.getItem('bgf-pravo') || '{}') || {}; }catch(e){ M = {}; }
   M.red = M.red || []; M.veze = M.veze || {};
   function spremi(){ try{ localStorage.setItem('bgf-pravo', JSON.stringify(M)); }catch(e){} }
+  P.M = M; P.spremi = spremi; P.BACKEND = BACKEND;   // 526: za Info / Zonu / Poredak / Statistiku
   function e_(x){ return String(x == null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
   P.e = e_;
   function hhmm(d){ d = d ? new Date(d) : new Date(); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
@@ -1579,6 +1580,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
   };
   function t(hr){ var j = { en:0, de:1, it:2 }[S.jezik]; var r = PREV[hr]; return (j === undefined || !r) ? hr : (r[j] || hr); }
   P.t = t;
+  P.prev = PREV;
 
   /* ---------- obavijest (v69 nema svoju) ---------- */
   var tostEl = document.createElement('div');
@@ -2303,6 +2305,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     }).catch(function(er){ if (!er.odServera){ P.veza = false; osvjeziPrikaz(); } });
   }
   P.osvjezi = osvjezi;
+  P.api = api;
   setInterval(function(){ if (P.on && !document.hidden) osvjezi(); }, 20000);
   /* 514: satnica (admin je može promijeniti) i dan (ponoć) — osvježi stanje turnira */
   P.zadnjiDatum = danasISO();
@@ -2340,5 +2343,569 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
 })();
 
 </script>
+<script>
+/* =====================================================================
+   BGF.LIVE v69 · PRAVI SPOJ · 526 (14.10.2026.)
+   Info, Zona, Poredak i Statistika u turnirskom načinu na pravim podacima.
+   Izgled ostaje v69 (iste klase); mijenja se samo sadržaj ispod zaglavlja.
+   - Info:  ovjera danas, poruke suca, „Sucu privatno” (i bez signala),
+            srdele za sljedeći dan (rok 3 h nakon kraja ribolova), podaci turnira.
+   - Zona:  karta zone iz turnira, brod uživo (GPS), kurs i brzina, do granice,
+            upozorenje 0,5 NM prije granice i izvan zone (vibracija + poruka).
+   - Poredak / Statistika: javni leaderboard (isti kao board).
+   ===================================================================== */
+(function(EKR){
+  'use strict';
+  var P = window.PRAVO;
+  if (!P || !P.api || !EKR || !EKR.tm) return;
+  var t = P.t, e_ = P.e, tost = P.tost, api = P.api, M = P.M;
+
+  Object.assign(P.prev, {
+    'Učitavam…':['Loading…','Wird geladen…','Caricamento…'],
+    'Bez signala — prikaz od':['No signal — showing data from','Kein Signal — Stand von','Nessun segnale — dati delle'],
+    'U grupu':['To group','In die Gruppe','Al gruppo'], 'Nazovi suca':['Call judge','Richter anrufen','Chiama giudice'],
+    'Sucu privatno':['Private to judge','Privat an Richter','Privato al giudice'], 'Opcije':['Options','Optionen','Opzioni'],
+    'Ovjera':['Check-in','Abnahme','Verifica'], 'još nije — kod suca prije isplovljenja':['not yet — with the judge before departure','noch nicht — beim Richter vor dem Auslaufen','non ancora — dal giudice prima della partenza'],
+    'u ekipi':['in the team','im Team','in squadra'], 'kraj':['end','Ende','fine'], 'kasno kačenje do':['late strike until','später Biss bis','abboccata tardiva fino'],
+    'Srdele za sutra još nisu naručene':['Sardines for tomorrow not ordered yet','Sardinen für morgen noch nicht bestellt','Sardine per domani non ancora ordinate'],
+    'Rok':['Deadline','Frist','Scadenza'], 'OBAVIJESTI SUCA':['JUDGE NOTICES','HINWEISE DES RICHTERS','AVVISI DEL GIUDICE'],
+    'Nema obavijesti suca.':['No notices from the judge.','Keine Hinweise des Richters.','Nessun avviso del giudice.'],
+    'svim ekipama':['to all teams','an alle Teams','a tutte le squadre'], 'Sudac':['Judge','Richter','Giudice'],
+    'SRDELE':['SARDINES','SARDINEN','SARDINE'], 'Nema sljedećeg ribolovnog dana.':['No next fishing day.','Kein weiterer Fischtag.','Nessun altro giorno di pesca.'],
+    'Narudžba poslana':['Order sent','Bestellung gesendet','Ordine inviato'], 'Promijeni':['Change','Ändern','Modifica'],
+    'Isto kao jučer':['Same as yesterday','Wie gestern','Come ieri'], 'Pošalji narudžbu':['Send order','Bestellung senden','Invia ordine'],
+    'Spremi promjenu':['Save change','Änderung speichern','Salva modifica'], 'preuzimanje':['pickup','Abholung','ritiro'],
+    'Rok je prošao — narudžbu mijenja organizator.':['The deadline has passed — the organiser changes the order.','Frist abgelaufen — der Veranstalter ändert die Bestellung.','Scadenza passata — l’ordine lo modifica l’organizzatore.'],
+    'Srdele naručene ✓':['Sardines ordered ✓','Sardinen bestellt ✓','Sardine ordinate ✓'],
+    'Narudžba čeka signal — šalje se sama.':['The order waits for signal — it sends itself.','Die Bestellung wartet auf Signal — wird automatisch gesendet.','L’ordine attende il segnale — parte da solo.'],
+    'TURNIR':['TOURNAMENT','TURNIER','TORNEO'], 'Satnica danas':['Today’s hours','Zeiten heute','Orario oggi'],
+    'Start':['Start','Start','Partenza'], 'Vaganje':['Weigh-in','Wiegen','Pesatura'], 'Zona':['Zone','Zone','Zona'],
+    'Propozicije':['Rules','Ausschreibung','Regolamento'], 'Karta zone i GPX':['Zone map and GPX','Zonenkarte und GPX','Mappa zona e GPX'],
+    'preuzmi':['download','herunterladen','scarica'], 'otvori':['open','öffnen','apri'], 'Bodovanje':['Scoring','Wertung','Punteggio'],
+    'Glavni sudac':['Chief judge','Hauptrichter','Giudice capo'], 'VHF kanal':['VHF channel','UKW-Kanal','Canale VHF'],
+    'WhatsApp grupa turnira':['Tournament WhatsApp group','WhatsApp-Gruppe des Turniers','Gruppo WhatsApp del torneo'],
+    'Hitno':['Emergency','Notfall','Emergenza'], 'Lučka kapetanija':['Harbour master','Hafenbehörde','Capitaneria di porto'],
+    'Napiši poruku…':['Write a message…','Nachricht schreiben…','Scrivi un messaggio…'], 'Pošalji':['Send','Senden','Invia'],
+    'Vraćamo se u luku':['Returning to port','Wir kehren in den Hafen zurück','Rientriamo in porto'],
+    'Problem s motorom':['Engine problem','Motorproblem','Problema al motore'],
+    'Riba još na štapu nakon kraja':['Fish still on after the end','Fisch noch an der Rute nach Ende','Pesce ancora in canna dopo la fine'],
+    'Poruku vidi samo sudac.':['Only the judge sees the message.','Nur der Richter sieht die Nachricht.','Il messaggio lo vede solo il giudice.'],
+    'Još nema poruka.':['No messages yet.','Noch keine Nachrichten.','Ancora nessun messaggio.'],
+    'čeka signal':['waiting for signal','wartet auf Signal','in attesa di segnale'], 'Poruka poslana sucu ✓':['Message sent to the judge ✓','Nachricht an den Richter gesendet ✓','Messaggio inviato al giudice ✓'],
+    'Poruka suca':['Message from the judge','Nachricht des Richters','Messaggio del giudice'],
+    'nazovi':['call','anrufen','chiama'], 'Sudac nije upisan.':['No judge entered.','Kein Richter eingetragen.','Nessun giudice inserito.'],
+    'Organizator još nije upisao zonu.':['The organiser has not entered the zone yet.','Der Veranstalter hat die Zone noch nicht eingetragen.','L’organizzatore non ha ancora inserito la zona.'],
+    'zona samo za prikaz':['zone for display only','Zone nur zur Anzeige','zona solo da visualizzare'],
+    'Status':['Status','Status','Stato'], 'u zoni':['in the zone','in der Zone','nella zona'], 'izvan zone':['outside the zone','außerhalb der Zone','fuori zona'],
+    'blizu granice':['near the border','nahe der Grenze','vicino al confine'], 'Do granice':['To the border','Bis zur Grenze','Al confine'],
+    'Pozicija':['Position','Position','Posizione'], 'Kurs · brzina':['Course · speed','Kurs · Tempo','Rotta · velocità'],
+    'čv':['kn','kn','nodi'], 'GPS točnost':['GPS accuracy','GPS-Genauigkeit','Precisione GPS'], 'osvježeno':['updated','aktualisiert','aggiornato'],
+    'Čekam GPS…':['Waiting for GPS…','Warte auf GPS…','In attesa del GPS…'],
+    'GPS nije dopušten — uključi lokaciju za aplikaciju.':['GPS not allowed — enable location for the app.','GPS nicht erlaubt — Standort für die App aktivieren.','GPS non consentito — attiva la posizione per l’app.'],
+    'Upozorenje stiže 0,5 NM prije granice (vibracija i poruka). Sa zaključanim ekranom radi samo u APK-u.':['A warning comes 0.5 NM before the border (vibration and message). With the screen locked it works only in the APK.','Warnung 0,5 NM vor der Grenze (Vibration und Meldung). Bei gesperrtem Bildschirm nur in der APK.','Avviso a 0,5 NM dal confine (vibrazione e messaggio). Con lo schermo bloccato funziona solo nell’APK.'],
+    'do granice zone':['to the zone border','bis zur Zonengrenze','al confine della zona'], 'Izvan zone':['Outside the zone','Außerhalb der Zone','Fuori zona'],
+    'IZVAN ZONE':['OUTSIDE ZONE','AUSSER ZONE','FUORI ZONA'],
+    'Kačenje izvan zone ide sucu s upozorenjem.':['A strike outside the zone goes to the judge with a warning.','Ein Biss außerhalb der Zone geht mit Warnung an den Richter.','Un’abboccata fuori zona va al giudice con un avviso.'],
+    'Ukupno':['Total','Gesamt','Totale'], 'vi':['you','ihr','voi'], 'ulova':['catches','Fänge','catture'],
+    'službeno':['official','offiziell','ufficiale'], 'privremeno':['provisional','vorläufig','provvisorio'],
+    'Poredak još nije dostupan.':['Ranking not available yet.','Rangliste noch nicht verfügbar.','Classifica non ancora disponibile.'],
+    'Plasmansko bodovanje — manje je bolje.':['Placement scoring — lower is better.','Platzierungswertung — weniger ist besser.','Punteggio per piazzamento — meno è meglio.'],
+    'mjesto':['place','Platz','posto'], 'Danas':['Today','Heute','Oggi'], 'Turnir':['Tournament','Turnier','Torneo'],
+    'kačenja':['strikes','Bisse','abboccate'], 'uspješnost':['success rate','Erfolgsquote','successo'], 'bodova':['points','Punkte','punti'],
+    'PO VRSTAMA':['BY SPECIES','NACH ART','PER SPECIE'], 'Otpalo':['Lost','Verloren','Perso'], 'KAČENJA PO SATU':['STRIKES PER HOUR','BISSE PRO STUNDE','ABBOCCATE PER ORA'],
+    'BORBE':['FIGHTS','DRILLS','COMBATTIMENTI'], 'Najduža':['Longest','Längster','Più lungo'], 'Prosječna':['Average','Durchschnitt','Media'],
+    'Mjesto u poretku':['Place in ranking','Platz in der Rangliste','Posto in classifica'], 'Još nema podataka.':['No data yet.','Noch keine Daten.','Ancora nessun dato.'],
+    'min':['min','Min.','min'], 'najveća':['biggest','größter','più grande'], 'kg':['kg','kg','kg'],
+    'pušteno':['released','freigelassen','rilasciato'], 'na brodu':['boated','an Bord','a bordo'], 'po kg':['per kg','pro kg','al kg'],
+    'Pravila bodovanja':['Scoring rules','Wertungsregeln','Regole di punteggio'], 'najmanje':['minimum','mindestens','minimo'],
+    'paket':['package','Paket','pacco'], 'Dan':['Day','Tag','Giorno'],
+  });
+
+  var D = { info:null, lb:null, lbOd:0, infoOd:0, porDan:'uk', statDan:'danas', srdN:null, srdMijenja:false,
+            gps:null, gpsGreska:false, trag:[], zst:null, zstUpoz:0, zadTab:null, lbBezVeze:false, infoBezVeze:false };
+  try{ if (M.infoCache && M.infoCache.tid){ D.info = M.infoCache.d; D.infoTid = M.infoCache.tid; } if (M.lbCache && M.lbCache.tid){ D.lb = M.lbCache.d; D.lbTid = M.lbCache.tid; } }catch(e){}
+  M.vidPor = M.vidPor || []; M.javPor = M.javPor || []; M.redPor = M.redPor || [];
+
+  var css = document.createElement('style');
+  css.textContent = ''
+    + '.p5nit{max-height:46vh;overflow-y:auto;margin:10px 0;display:flex;flex-direction:column;gap:6px}'
+    + '.p5m{max-width:82%;padding:8px 11px;border-radius:14px;font-size:14.5px;line-height:1.35;background:#f1f5f9;color:#0f172a;align-self:flex-start}'
+    + '.p5m.ja{align-self:flex-end;background:#0456E8;color:#fff}.p5m small{display:block;font-size:11px;opacity:.7;margin-top:2px}'
+    + '.p5m.svima{border:1px solid #fcd34d;background:#fffbeb}'
+    + '.p5bad{display:inline-block;min-width:18px;padding:1px 5px;border-radius:10px;background:#dc2626;color:#fff;font:800 11px/16px system-ui;text-align:center;margin-left:4px;vertical-align:1px}'
+    + '[data-tmtab="info"]{position:relative}[data-tmtab="info"] .p5bad{position:absolute;top:2px;right:18%;margin:0}'
+    + '.brzo button{position:relative}.brzo .p5bad{position:absolute;top:4px;right:6px;margin:0}'
+    + '.info a{color:#0456E8;font-weight:700;text-decoration:none}'
+    + '.p5unos{display:flex;gap:8px;margin-top:6px}.p5unos input{flex:1;margin:0!important}.p5unos button{width:auto!important;padding:0 16px!important;margin:0!important}'
+    + 'body.tamno .p5m{background:#1e293b;color:#e2e8f0}body.tamno .p5m.ja{background:#0456E8;color:#fff}body.tamno .p5m.svima{background:#422006;border-color:#a16207}'
+    + '.tmstatus.p5izvan{background:#7f1d1d!important}.tmstatus.p5blizu{background:#92400e!important}.tmstatus.p5izvan .uz,.tmstatus.p5blizu .uz{color:#fff!important}';
+  document.head.appendChild(css);
+
+  /* ---------------- pomoćno ---------------- */
+  function hhmm(iso){ if (!iso) return ''; var d = new Date(iso); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+  function datumKratko(iso){ if (!iso) return ''; var p = String(iso).slice(0,10).split('-'); return (+p[2]) + '. ' + (+p[1]) + '.'; }
+  function broj(x, dec){ var n = Number(x) || 0; return n.toLocaleString(S.jezik === 'en' ? 'en' : S.jezik === 'de' ? 'de' : S.jezik === 'it' ? 'it' : 'hr', { maximumFractionDigits: dec == null ? 2 : dec }); }
+  function naTm(){ return P.on && S.v === 'tm'; }
+  function crtajAkoSmijem(){ if (naTm() && !LIST) crtaj(); }
+  function bezVezeTraka(od){ return od ? '<div class="offline">📡 ' + e_(t('Bez signala — prikaz od')) + ' ' + hhmm(od) + '</div>' : ''; }
+  function mojId(){ return String(P.ekipa && P.ekipa.id); }
+  function trn(){ return P.turnir || {}; }
+
+  /* ---------------- podaci: Info (ovjera, poruke, srdele) ---------------- */
+  var infoSalje = false;
+  function ucitajInfo(){
+    if (!P.on || !P.tid || infoSalje) return Promise.resolve();
+    infoSalje = true;
+    return api('/api/tournaments/' + P.tid + '/ekipa-info').then(function(d){
+      infoSalje = false; D.infoBezVeze = false;
+      var prvi = !D.info || D.infoTid !== P.tid; if (prvi) { D.srdN = null; D.srdMijenja = false; }
+      D.info = d; D.infoTid = P.tid; D.infoOd = Date.now(); M.infoCache = { tid:P.tid, d:d }; P.spremi();
+      javiNovePoruke(prvi);
+      if (LIST && LIST.k === 'tm-poruka'){ osvjeziNit(); oznaciProcitano(); }
+      else if (S.tmtab === 'info' || prvi) crtajAkoSmijem(); else oznake();
+    }, function(er){ infoSalje = false; if (!er.odServera){ D.infoBezVeze = true; } });
+  }
+  function infoOk(){ return D.info && D.infoTid === P.tid; }
+  function porukeSuca(){ return ((infoOk() && D.info.poruke) || []).filter(function(m){ return m.odSuca; }); }
+  function neprocitano(){ return porukeSuca().filter(function(m){ return !m.svima ? !m.procitalaEkipa : M.vidPor.indexOf(m.id) < 0; }).length; }
+  function javiNovePoruke(prvi){
+    var nove = porukeSuca().filter(function(m){ return M.javPor.indexOf(m.id) < 0 && M.vidPor.indexOf(m.id) < 0 && (m.svima || !m.procitalaEkipa); });
+    if (!nove.length) return;
+    nove.forEach(function(m){ M.javPor.push(m.id); }); if (M.javPor.length > 400) M.javPor = M.javPor.slice(-400); P.spremi();
+    if (!prvi || nove.some(function(m){ return Date.now() - Date.parse(m.at) < 10 * 60000; })){
+      var z = nove[nove.length - 1];
+      tost('✉ ' + t('Poruka suca') + ': ' + z.tekst);
+      try{ navigator.vibrate && navigator.vibrate([200, 100, 200]); }catch(e){}
+    }
+    if (S.tmtab === 'info' && naTm()) oznaciVidjeno();
+  }
+  function oznaciVidjeno(){
+    porukeSuca().forEach(function(m){ if (m.svima && M.vidPor.indexOf(m.id) < 0) M.vidPor.push(m.id); });
+    if (M.vidPor.length > 400) M.vidPor = M.vidPor.slice(-400);
+    P.spremi();
+  }
+  function oznaciProcitano(){
+    oznaciVidjeno();
+    var ima = porukeSuca().some(function(m){ return !m.svima && !m.procitalaEkipa; });
+    porukeSuca().forEach(function(m){ if (!m.procitalaEkipa) m.procitalaEkipa = new Date().toISOString(); });
+    if (ima) api('/api/tournaments/' + P.tid + '/poruke', { method:'PATCH', body:'{}' }).catch(function(){});
+    oznake();
+  }
+
+  /* poruke sucu: red na mobitelu (radi i bez signala) */
+  var porSalje = false;
+  function posaljiPoruke(){
+    if (porSalje || !M.redPor.length || !M.access) return;
+    var r = M.redPor[0]; porSalje = true;
+    api('/api/tournaments/' + r.tid + '/poruke', { method:'POST', body:JSON.stringify({ tekst:r.tekst, clientId:r.clientId }) })
+      .then(function(){ M.redPor.shift(); P.spremi(); porSalje = false; tost('Poruka poslana sucu ✓'); ucitajInfo(); posaljiPoruke(); })
+      .catch(function(er){ porSalje = false; if (er.odServera && er.status !== 401){ M.redPor.shift(); P.spremi(); tost(er.message, true); osvjeziNit(); } });
+  }
+  function novaPoruka(tekst){
+    tekst = String(tekst || '').trim(); if (!tekst || !P.tid) return;
+    M.redPor.push({ tid:P.tid, tekst:tekst.slice(0, 1000), clientId:'m' + Date.now().toString(36) + Math.random().toString(36).slice(2,6), at:new Date().toISOString() });
+    P.spremi(); osvjeziNit(); posaljiPoruke();
+  }
+
+  /* srdele: red s jednom zadnjom narudžbom */
+  function naruci(n){
+    M.redSrd = { tid:P.tid, paketa:n, dan:D.info && D.info.srdele && D.info.srdele.dan }; P.spremi();
+    D.srdMijenja = false;
+    if (D.info && D.info.srdele){ D.info.srdele.paketa = n; D.info.srdele.naruceno = true; D.info.srdele.narucenoU = new Date().toISOString(); }
+    crtajAkoSmijem(); posaljiSrdele(true);
+  }
+  function posaljiSrdele(javi){
+    var r = M.redSrd; if (!r || !M.access) return;
+    api('/api/tournaments/' + r.tid + '/srdele', { method:'POST', body:JSON.stringify({ paketa:r.paketa, dan:r.dan }) })
+      .then(function(d){ M.redSrd = null; P.spremi(); if (d.srdele && D.info) D.info.srdele = d.srdele; tost('Srdele naručene ✓'); crtajAkoSmijem(); })
+      .catch(function(er){
+        if (er.odServera){ M.redSrd = null; P.spremi(); tost(er.message, true); ucitajInfo(); }
+        else if (javi) tost('Narudžba čeka signal — šalje se sama.');
+      });
+  }
+
+  /* ---------------- podaci: javni leaderboard (Poredak, Statistika, bodovanje) ---------------- */
+  var lbSalje = false;
+  function ucitajLb(){
+    var sub = trn().subdomain; if (!P.on || !sub || lbSalje) return;
+    lbSalje = true;
+    fetch(P.BACKEND + '/api/public/' + encodeURIComponent(sub) + '/leaderboard', { cache:'no-store' })
+      .then(function(r){ if (!r.ok) throw Object.assign(new Error('HTTP ' + r.status), { odServera:true }); return r.json(); })
+      .then(function(d){ lbSalje = false; D.lb = d; D.lbTid = P.tid; D.lbOd = Date.now(); D.lbBezVeze = false; M.lbCache = { tid:P.tid, d:d }; P.spremi();
+        if (S.tmtab === 'poredak' || S.tmtab === 'stat') crtajAkoSmijem(); })
+      .catch(function(er){ lbSalje = false; if (!er.odServera) D.lbBezVeze = true; });
+  }
+
+  /* ---------------- ZONA: GPS uživo, udaljenost do granice, upozorenje ---------------- */
+  function zonaTocke(){
+    var z = trn().zone_points;
+    var ok = function(a){ return Array.isArray(a) ? a.map(function(p){ return { lat:Number(p && p.lat), lon:Number(p && p.lon) }; }).filter(function(p){ return isFinite(p.lat) && isFinite(p.lon); }) : []; };
+    var pz = ok(z); if (pz.length >= 3) return { Z:pz, prava:true };
+    var pd = ok(trn().zone_display); if (pd.length >= 3) return { Z:pd, prava:false };
+    return null;
+  }
+  function uZoni(Z, lat, lon){ var u = false; for (var i = 0, j = Z.length - 1; i < Z.length; j = i++){ var yi = Z[i].lat, xi = Z[i].lon, yj = Z[j].lat, xj = Z[j].lon; if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) u = !u; } return u; }
+  function nmDoGranice(Z, lat, lon){
+    var c = Math.cos(lat * Math.PI / 180), xy = function(a, b){ return [b * 60 * c, a * 60]; }, p = xy(lat, lon), naj = Infinity;
+    for (var i = 0; i < Z.length; i++){ var a = xy(Z[i].lat, Z[i].lon), b = xy(Z[(i+1) % Z.length].lat, Z[(i+1) % Z.length].lon), dx = b[0]-a[0], dy = b[1]-a[1];
+      var k = ((p[0]-a[0]) * dx + (p[1]-a[1]) * dy) / (dx*dx + dy*dy || 1); k = Math.max(0, Math.min(1, k)); naj = Math.min(naj, Math.hypot(a[0] + k*dx - p[0], a[1] + k*dy - p[1])); }
+    return naj;
+  }
+  function stanjeZone(){
+    var z = zonaTocke(), g = D.gps; if (!z || !z.prava || !g) return null;
+    var u = uZoni(z.Z, g.lat, g.lon), nm = nmDoGranice(z.Z, g.lat, g.lon);
+    return { u:u, nm:nm, st: !u ? 'izvan' : (nm < 0.5 ? 'blizu' : 'u') };
+  }
+  function procijeniUpozorenje(){
+    var s = stanjeZone(); if (!s || !P.dan) { D.zst = null; return; }
+    var prije = D.zst, st = s.st;
+    if (prije === 'blizu' && st === 'u' && s.nm < 0.6) st = 'blizu';            // histereza: ne treperi na 0,5
+    D.zst = st;
+    var ponovi = st === 'izvan' && Date.now() - D.zstUpoz > 120000;
+    if ((st !== 'u' && st !== prije) || ponovi){
+      D.zstUpoz = Date.now();
+      tost(st === 'izvan' ? '⚠ ' + t('Izvan zone') + ' · ' + broj(s.nm, 2) + ' NM' : '⚠ ' + broj(s.nm, 2) + ' NM ' + t('do granice zone'), true);
+      try{ navigator.vibrate && navigator.vibrate([400, 150, 400, 150, 400]); }catch(e){}
+    }
+    if (st !== prije) crtajAkoSmijem();
+  }
+  var gpsWatch = null;
+  function gpsUkljuci(){
+    if (gpsWatch != null || !navigator.geolocation || !P.on || document.hidden) return;
+    gpsWatch = navigator.geolocation.watchPosition(function(p){
+      var c = p.coords, sada = Date.now(), pr = D.gps;
+      var g = { lat:c.latitude, lon:c.longitude, acc:Math.round(c.accuracy || 0), at:sada, kurs:null, brz:null };
+      if (c.speed != null && isFinite(c.speed)) g.brz = c.speed * 1.943844;
+      if (c.heading != null && isFinite(c.heading)) g.kurs = c.heading;
+      if (pr && (g.kurs == null || g.brz == null) && sada - pr.at > 4000){
+        var dy = (g.lat - pr.lat) * 60, dx = (g.lon - pr.lon) * 60 * Math.cos(g.lat * Math.PI / 180), d = Math.hypot(dx, dy);
+        if (g.brz == null) g.brz = d / ((sada - pr.at) / 3600000);
+        if (g.kurs == null && d > 0.005) g.kurs = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+      }
+      if (g.kurs == null && pr) g.kurs = pr.kurs;
+      D.gps = g; D.gpsGreska = false; P.zadnjaPoz = { lat:g.lat, lon:g.lon };
+      var zad = D.trag[D.trag.length - 1];
+      if (!zad || sada - zad[2] > 20000) { D.trag.push([g.lat, g.lon, sada]); if (D.trag.length > 360) D.trag.shift(); }
+      procijeniUpozorenje();
+      if (S.tmtab === 'zona') crtajZonuTiho();
+    }, function(er){ if (er && er.code === 1){ D.gpsGreska = true; gpsIskljuci(); if (S.tmtab === 'zona') crtajAkoSmijem(); } },
+    { enableHighAccuracy:true, maximumAge:10000, timeout:30000 });
+  }
+  function gpsIskljuci(){ if (gpsWatch != null){ try{ navigator.geolocation.clearWatch(gpsWatch); }catch(e){} gpsWatch = null; } }
+  var zonaZad = 0;
+  function crtajZonuTiho(){ if (Date.now() - zonaZad < 3000) return; zonaZad = Date.now(); crtajAkoSmijem(); }
+
+  function dm(x, poz, neg){ var a = Math.abs(x), st = Math.floor(a), mi = (a - st) * 60; return (poz === 'lon' ? String(st).padStart(3,'0') : String(st).padStart(2,'0')) + '°' + mi.toFixed(3).replace('.', ',') + '′ ' + (x >= 0 ? (poz === 'lon' ? 'E' : 'N') : (poz === 'lon' ? 'W' : 'S')); }
+
+  /* ---------------- ekrani ---------------- */
+  function brzo(){
+    var n = neprocitano(), cek = M.redPor.filter(function(r){ return r.tid === P.tid; }).length;
+    return '<div class="brzo"><button data-tmlist="grupa">💬<span>' + e_(t('U grupu')) + '</span></button><button data-tmlist="sudac">📞<span>' + e_(t('Nazovi suca')) + '</span></button>'
+      + '<button data-tmlist="poruka">✉<span>' + e_(t('Sucu privatno')) + '</span>' + (n ? '<i class="p5bad">' + n + '</i>' : cek ? '<i class="p5bad" style="background:#d97706">⏳' + cek + '</i>' : '') + '</button>'
+      + '<button data-tmlist="opcije">⚙<span>' + e_(t('Opcije')) + '</span></button></div>';
+  }
+  function plusMin(hm, min){ var p = String(hm || '').split(':'); if (p.length < 2) return ''; var m = (+p[0]) * 60 + (+p[1]) + min; m = ((m % 1440) + 1440) % 1440; return String(Math.floor(m / 60)).padStart(2,'0') + ':' + String(m % 60).padStart(2,'0'); }
+
+  function ekranInfo(){
+    var I = infoOk() ? D.info : {}, T = trn(), o = I.ovjera || {}, s = I.srdele || null;
+    var h = brzo();
+    if (!infoOk()) h += '<p class="opis">' + e_(t('Učitavam…')) + '</p>';
+    if (D.infoBezVeze) h += bezVezeTraka(D.infoOd);
+    /* ovjera + kraj dana */
+    var kasno = T.late_hook_enabled !== false && P.sati && P.sati.do ? plusMin(P.sati.do, Number(T.late_hook_extension_min || 60)) : '';
+    h += '<div class="tmdan"' + (P.dan && infoOk() && !o.ovjereno ? ' style="background:#fff7ed;border-color:#fed7aa"' : '') + '><div><b>'
+      + (P.dan ? (o.ovjereno ? '✓ ' + e_(t('Ovjera')) + ' ' + e_(t('Dan')) + ' ' + P.dan + ' · ' + hhmm(o.at) : '⏳ ' + e_(t('Ovjera')) + ' ' + e_(t('Dan')) + ' ' + P.dan) : e_(t('danas se ne lovi')))
+      + '</b><small>' + (P.dan && infoOk() && !o.ovjereno ? e_(t('još nije — kod suca prije isplovljenja')) : (TM.naBrodu.length + ' ' + e_(t('u ekipi')))) + '</small></div>'
+      + (P.sati ? '<div class="do"><b class="sport">' + e_(P.sati.do) + '</b><small>' + e_(t('kraj')) + (kasno ? ' · ' + e_(t('kasno kačenje do')) + ' ' + kasno : '') + '</small></div>' : '') + '</div>';
+    if (s && s.dan && !s.naruceno && !s.rokProsao) h += '<div class="obav" style="background:#fff7ed;border-color:#fed7aa"><span>🐟</span><div><b style="color:#9a3412">' + e_(t('Srdele za sutra još nisu naručene')) + '</b>' + (s.rok ? '<small style="color:#c2410c">' + e_(t('Rok')) + ' ' + s.rok.slice(11) + (s.rok.slice(0,10) !== P.zadnjiDatum ? ' · ' + datumKratko(s.rok) : '') + '</small>' : '') + '</div></div>';
+    /* obavijesti suca */
+    var ps = porukeSuca().slice().reverse().slice(0, 8);
+    h += '<div class="odj">✉ ' + e_(t('OBAVIJESTI SUCA')) + '</div>'
+      + (ps.length ? ps.map(function(m){ return '<div class="poruka"' + (m.svima ? ' style="border-left-color:#f59e0b"' : '') + '><b data-bezprijevoda>' + e_((m.odSuca && (!m.od || m.od === 'Sudac')) ? t('Sudac') : (m.od || t('Sudac'))) + ' · ' + hhmm(m.at) + (m.svima ? ' · ' + e_(t('svim ekipama')) : '') + '</b><span data-bezprijevoda style="display:block;margin-top:2px">' + e_(m.tekst) + '</span></div>'; }).join('')
+        : '<p class="opis">' + e_(t('Nema obavijesti suca.')) + '</p>');
+    /* srdele */
+    h += srdeleHtml(s);
+    /* turnir */
+    var red = function(a, b){ return b ? '<div><b>' + a + '</b><span>' + b + '</span></div>' : ''; };
+    var lnk = function(url, tx){ return url ? '<a href="' + e_(url) + '" target="_blank" rel="noopener">' + e_(tx) + ' ›</a>' : ''; };
+    var tel = function(x){ return x ? '<a href="tel:' + e_(String(x).replace(/[^\d+]/g, '')) + '">' + e_(x) + '</a>' : ''; };
+    var sub = T.subdomain;
+    h += '<div class="odj">📋 ' + e_(t('TURNIR')) + '</div><div class="info" data-bezprijevoda>'
+      + red(e_(t('Satnica danas')), P.sati ? e_(P.sati.od + '–' + P.sati.do) : e_(t('danas se ne lovi')))
+      + red(e_(t('Start')), e_(T.info_start_port || ''))
+      + red(e_(t('Vaganje')), e_(T.info_weigh_port || ''))
+      + red(e_(t('Zona')), e_(T.info_zone || ''))
+      + red(e_(t('Propozicije')), lnk(T.info_rules_url, t('otvori')))
+      + red(e_(t('Karta zone i GPX')), sub && zonaTocke() ? lnk(P.BACKEND + '/api/public/' + encodeURIComponent(sub) + '/zone-gpx', t('preuzmi')) : '')
+      + '<div data-tmlist="bodovanje" style="cursor:pointer"><b>' + e_(t('Bodovanje')) + '</b><span>›</span></div>'
+      + red(e_(t('Glavni sudac')), T.info_judge_name || T.info_judge_phone ? e_(T.info_judge_name || '') + (T.info_judge_phone ? ' · ' + tel(T.info_judge_phone) : '') : '')
+      + red(e_(t('VHF kanal')), e_(T.info_vhf || ''))
+      + red(e_(t('WhatsApp grupa turnira')), lnk(T.info_whatsapp_group, t('otvori')))
+      + red(e_(t('Hitno')), T.info_emergency ? e_(T.info_emergency) : tel('112'))
+      + red(e_(t('Lučka kapetanija')), tel('195') + ' · VHF 16')
+      + '</div>';
+    return '<main>' + h + '</main>';
+  }
+  function srdeleHtml(s){
+    var h = '<div class="odj">🐟 ' + e_(t('SRDELE')) + (s && s.dan ? ' · ' + e_(t('Dan')) + ' ' + s.dan + (s.datum ? ' (' + datumKratko(s.datum) + ')' : '') : '') + '</div>';
+    if (!infoOk()) return h;
+    if (!s || !s.dan) return h + '<p class="opis">' + e_(t('Nema sljedećeg ribolovnog dana.')) + '</p>';
+    var jed = s.jedinica || t('paket'), cij = Number(s.cijena) || 0;
+    var opis = function(n){ return n + ' × ' + e_(jed) + (cij ? ' · ' + broj(n * cij) + ' €' : ''); };
+    var rokTx = s.rok ? e_(t('Rok')) + ' ' + s.rok.slice(11) + (s.rok.slice(0,10) !== P.zadnjiDatum ? ' (' + datumKratko(s.rok) + ')' : '') : '';
+    var cekaSignal = M.redSrd && M.redSrd.tid === P.tid;
+    if (s.rokProsao) return h + '<div class="srdok"><b>' + (s.naruceno ? '✓ ' + e_(t('Narudžba poslana')) : '—') + '</b><span>' + opis(s.paketa) + '</span></div><p class="opis">' + e_(t('Rok je prošao — narudžbu mijenja organizator.')) + '</p>';
+    if (s.naruceno && !D.srdMijenja) return h + '<div class="srdok"><b>✓ ' + e_(t('Narudžba poslana')) + (s.narucenoU ? ' · ' + hhmm(s.narucenoU) : '') + (cekaSignal ? ' · ⏳' : '') + '</b><span>' + opis(s.paketa) + (s.preuzimanje ? ' · ' + e_(t('preuzimanje')) + ' ' + e_(s.preuzimanje) : '') + '</span><button data-p5srdpromijeni>' + e_(t('Promijeni')) + (rokTx ? ' (' + rokTx + ')' : '') + '</button></div>';
+    if (D.srdN == null) D.srdN = s.naruceno ? s.paketa : (s.jucer || 0);
+    return h + (s.jucer && !s.naruceno ? '<button class="sir" style="margin-bottom:8px" data-p5srdjucer>↻ ' + e_(t('Isto kao jučer')) + ' (' + s.jucer + ')</button>' : '')
+      + '<div class="srdele"><button data-p5srd="-1">−</button><div><b class="sport">' + D.srdN + '</b><small>' + e_(jed) + (cij ? ' · ' + broj(D.srdN * cij) + ' €' : '') + '</small></div><button data-p5srd="1">+</button></div>'
+      + '<button class="plavi" style="margin-top:8px" data-p5srdposalji>' + e_(t(s.naruceno ? 'Spremi promjenu' : 'Pošalji narudžbu')) + '</button>'
+      + '<p class="opis">' + rokTx + (s.preuzimanje ? ' · ' + e_(t('preuzimanje')) + ' ' + e_(s.preuzimanje) : '') + '</p>';
+  }
+
+  function ekranZona(){
+    var z = zonaTocke(), g = D.gps, s = stanjeZone(), h = '';
+    if (D.gpsGreska) h += '<div class="upoz">📍 <div>' + e_(t('GPS nije dopušten — uključi lokaciju za aplikaciju.')) + '</div></div>';
+    if (!z) h += '<div class="upoz" style="background:#f1f5f9;border-color:#cbd5e1;color:#334155">🗺 <div>' + e_(t('Organizator još nije upisao zonu.')) + '</div></div>';
+    if (z){
+      var W = 320, H = 300, pad = 18, la = z.Z.map(function(p){ return p.lat; }), lo = z.Z.map(function(p){ return p.lon; });
+      if (g && nmDoGranice(z.Z, g.lat, g.lon) < 30){ la.push(g.lat); lo.push(g.lon); }
+      var mnA = Math.min.apply(0, la), mxA = Math.max.apply(0, la), mnO = Math.min.apply(0, lo), mxO = Math.max.apply(0, lo);
+      var c = Math.cos((mnA + mxA) / 2 * Math.PI / 180), sx = (mxO - mnO) * c || 0.01, sy = (mxA - mnA) || 0.01;
+      var k = Math.min((W - 2 * pad) / sx, (H - 2 * pad) / sy), ox = (W - sx * k) / 2, oy = (H - sy * k) / 2;
+      var X = function(lon){ return (ox + (lon - mnO) * c * k).toFixed(1); }, Y = function(lat){ return (H - oy - (lat - mnA) * k).toFixed(1); };
+      var boja = z.prava ? '#22C55E' : '#94a3b8';
+      var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '"><polygon points="' + z.Z.map(function(p){ return X(p.lon) + ',' + Y(p.lat); }).join(' ') + '" fill="' + (z.prava ? 'rgba(34,197,94,.10)' : 'rgba(148,163,184,.12)') + '" stroke="' + boja + '" stroke-width="2"' + (z.prava ? '' : ' stroke-dasharray="6 4"') + '/>';
+      if (D.trag.length > 1) svg += '<polyline points="' + D.trag.map(function(p){ return X(p[1]) + ',' + Y(p[0]); }).join(' ') + '" fill="none" stroke="#93c5fd" stroke-width="1.5" opacity=".7"/>';
+      if (g){
+        var bx = X(g.lon), by = Y(g.lat), bc = s && s.st === 'izvan' ? '#ef4444' : s && s.st === 'blizu' ? '#f59e0b' : '#fff';
+        svg += g.kurs != null && (g.brz || 0) > 0.5 ? '<g transform="translate(' + bx + ',' + by + ') rotate(' + Math.round(g.kurs) + ')"><path d="M0,-12 L8,9 L0,5 L-8,9 Z" fill="' + bc + '" stroke="#071A2D" stroke-width="1.5"/></g>'
+          : '<circle cx="' + bx + '" cy="' + by + '" r="7" fill="' + bc + '" stroke="#071A2D" stroke-width="2"/>';
+      }
+      var nm1 = k / 60; if (nm1 > 4) svg += '<g transform="translate(14,' + (H - 14) + ')"><line x1="0" y1="0" x2="' + nm1.toFixed(1) + '" y2="0" stroke="#e2e8f0" stroke-width="2"/><text x="0" y="-5" fill="#e2e8f0" font-size="10">1 NM</text></g>';
+      svg += '<text x="' + (W - 16) + '" y="20" fill="#e2e8f0" font-size="12" font-weight="800" text-anchor="middle">N</text><path d="M' + (W - 16) + ',24 l-4,10 h8z" fill="#e2e8f0"/></svg>';
+      h += '<div class="karta">' + svg + '</div>';
+      if (!z.prava) h += '<p class="opis">' + e_(t('zona samo za prikaz')) + '</p>';
+    }
+    var stTx = !g ? '<span>' + e_(t('Čekam GPS…')) + '</span>'
+      : !s ? '<span>—</span>'
+      : s.st === 'izvan' ? '<span style="color:#dc2626;font-weight:800">● ' + e_(t('izvan zone')) + '</span>'
+      : s.st === 'blizu' ? '<span style="color:#d97706;font-weight:800">● ' + e_(t('blizu granice')) + '</span>'
+      : '<span style="color:#16a34a;font-weight:800">● ' + e_(t('u zoni')) + '</span>';
+    h += '<div class="info" style="margin-top:12px"><div><b>' + e_(t('Status')) + '</b>' + stTx + '</div>'
+      + (s ? '<div><b>' + e_(t('Do granice')) + '</b><span>' + broj(s.nm, 2) + ' NM</span></div>' : '')
+      + (g ? '<div><b>' + e_(t('Pozicija')) + '</b><span data-bezprijevoda>' + dm(g.lat, 'lat') + ' · ' + dm(g.lon, 'lon') + '</span></div>'
+        + '<div><b>' + e_(t('Kurs · brzina')) + '</b><span data-bezprijevoda>' + (g.kurs != null && (g.brz || 0) > 0.5 ? String(Math.round(g.kurs)).padStart(3, '0') + '°' : '—') + ' · ' + broj(g.brz || 0, 1) + ' ' + e_(t('čv')) + '</span></div>'
+        + '<div><b>' + e_(t('GPS točnost')) + '</b><span data-bezprijevoda>±' + g.acc + ' m · ' + e_(t('osvježeno')) + ' ' + hhmm(g.at) + '</span></div>' : '')
+      + '</div><p class="opis" style="margin-top:8px">' + e_(t('Upozorenje stiže 0,5 NM prije granice (vibracija i poruka). Sa zaključanim ekranom radi samo u APK-u.')) + '</p>';
+    return '<main>' + h + '</main>';
+  }
+
+  function lbOk(){ return D.lb && D.lbTid === P.tid; }
+  function ekranPoredak(){
+    if (!lbOk()) return '<main>' + (D.lbBezVeze ? bezVezeTraka(0) : '') + '<p class="opis">' + e_(t(D.lbBezVeze ? 'Poredak još nije dostupan.' : 'Učitavam…')) + '</p></main>';
+    var L = D.lb, Tt = L.tournament || {}, plas = Tt.rankingMode === 'placement', dani = Number(Tt.days) || 0, zak = Tt.lockedDays || [], tek = Number(Tt.currentDay) || dani;
+    var cip = [['uk', t('Ukupno')]];
+    for (var d = 1; d <= Math.min(dani, Math.max(tek, 1)); d++) cip.push([String(d), t('Dan') + ' ' + d + (zak.indexOf(d) >= 0 ? ' 🔒' : '')]);
+    if (!cip.some(function(c){ return c[0] === D.porDan; })) D.porDan = 'uk';
+    var red = [];
+    var lbE = (L.leaderboard || []).slice();
+    if (D.porDan === 'uk'){
+      red = lbE.map(function(e, i){ return { e:e, mj: plas ? (e.placeTotal != null ? e.placeTotal : (e.disqualified ? '—' : i + 1)) : (e.disqualified ? '—' : i + 1),
+        bod: e.disqualified ? 'DSQ' : plas ? (e.placementPoints != null ? broj(e.placementPoints) : '—') : broj(e.points) }; });
+    } else {
+      var dn = Number(D.porDan);
+      if (plas){
+        red = lbE.filter(function(e){ return !e.disqualified; }).map(function(e){ var x = (e.days || {})[dn] || {}; return { e:e, mj:x.rank != null ? x.rank : '—', bod: x.pb != null ? broj(x.pb) : '—', bpv:x.bpv, sort:x.rank != null ? x.rank : 999 }; })
+          .sort(function(a, b){ return a.sort - b.sort; });
+      } else {
+        var zb = {}; (L.catches || []).forEach(function(c){ if (c.day === dn) zb[c.teamId] = (zb[c.teamId] || 0) + (Number(c.points) || 0); });
+        red = lbE.filter(function(e){ return !e.disqualified; }).map(function(e){ return { e:e, b:zb[e.teamId] || 0 }; })
+          .sort(function(a, b){ return b.b - a.b || a.e.compNumber - b.e.compNumber; }).map(function(r, i){ return { e:r.e, mj:i + 1, bod:broj(r.b) }; });
+      }
+    }
+    var h = (D.lbBezVeze ? bezVezeTraka(D.lbOd) : '') + '<div class="cipovi" style="margin-bottom:8px">' + cip.map(function(c){ return '<button data-p5por="' + c[0] + '" aria-pressed="' + (c[0] === D.porDan) + '">' + e_(c[1]) + '</button>'; }).join('') + '</div>';
+    if (!red.length) h += '<p class="opis">' + e_(t('Poredak još nije dostupan.')) + '</p>';
+    h += red.map(function(r, i){ var moj = String(r.e.teamId) === mojId();
+      return '<div class="redak ' + (i ? '' : 'prvi') + (moj ? ' moj' : '') + '" data-bezprijevoda><span class="mj sport">' + e_(r.mj) + '</span><div style="min-width:0"><b>' + e_(r.e.name) + (moj ? ' · ' + e_(t('vi')) : '') + '</b><small>#' + e_(r.e.compNumber) + ' · ' + (r.e.catches || 0) + ' ' + e_(t('ulova')) + (r.bpv != null ? ' · BpV ' + broj(r.bpv) : '') + '</small></div><span class="bod sport">' + e_(r.bod) + '</span></div>'; }).join('');
+    var sl = [], pr = [];
+    for (var d2 = 1; d2 <= Math.min(dani, tek); d2++) (zak.indexOf(d2) >= 0 ? sl : pr).push(d2);
+    h += '<p class="opis" style="margin-top:10px">' + (plas ? e_(t('Plasmansko bodovanje — manje je bolje.')) + ' ' : '')
+      + (sl.length ? e_(t('Dan')) + ' ' + sl.join(', ') + ' ' + e_(t('službeno')) : '') + (sl.length && pr.length ? ' · ' : '') + (pr.length ? e_(t('Dan')) + ' ' + pr.join(', ') + ' ' + e_(t('privremeno')) : '')
+      + ' · ' + e_(t('osvježeno')) + ' ' + hhmm(D.lbOd) + '</p>';
+    return '<main>' + h + '</main>';
+  }
+
+  function ekranStat(){
+    if (!lbOk()) return '<main><p class="opis">' + e_(t(D.lbBezVeze ? 'Još nema podataka.' : 'Učitavam…')) + '</p></main>';
+    var L = D.lb, ja = mojId(), dan = D.statDan === 'danas' ? (P.dan || Number((L.tournament || {}).currentDay) || null) : null;
+    var uDanu = function(x){ return dan == null || x.day === dan; };
+    var ul = (L.catches || []).filter(function(c){ return String(c.teamId) === ja && uDanu(c); });
+    var kac = (L.feed || []).filter(function(f){ return f.kind === 'hooked' && String(f.teamId) === ja && uDanu(f); });
+    var broji = ul.filter(function(c){ return c.outcome !== 'lost' && c.outcome !== 'disq' && c.status !== 'disq'; });
+    var otp = ul.filter(function(c){ return c.outcome === 'lost'; }).length;
+    var nKac = Math.max(kac.length, ul.length), bod = ul.reduce(function(a, c){ return a + (Number(c.points) || 0); }, 0);
+    var naj = broji.filter(function(c){ return c.weightKg; }).sort(function(a, b){ return b.weightKg - a.weightKg; })[0];
+    var mj = (L.leaderboard || []).findIndex(function(e){ return String(e.teamId) === ja; });
+    var h = '<div class="cipovi" style="margin-bottom:8px"><button data-p5stat="danas" aria-pressed="' + (D.statDan === 'danas') + '">' + e_(t('Danas')) + '</button><button data-p5stat="turnir" aria-pressed="' + (D.statDan !== 'danas') + '">' + e_(t('Turnir')) + '</button></div>';
+    h += '<div class="brojke"><div><b class="sport">' + nKac + '</b><small>' + e_(t('kačenja')) + '</small></div><div><b class="sport">' + broji.length + '</b><small>' + e_(t('ulova')) + '</small></div>'
+      + '<div><b class="sport">' + (nKac ? Math.round(broji.length / nKac * 100) : 0) + ' %</b><small>' + e_(t('uspješnost')) + '</small></div>'
+      + '<div><b class="sport">' + (naj ? broj(naj.weightKg, 1) + ' kg' : broj(bod)) + '</b><small>' + e_(t(naj ? 'najveća' : 'bodova')) + '</small></div></div>';
+    var mojE = mj >= 0 ? L.leaderboard[mj] : null, plasS = (L.tournament || {}).rankingMode === 'placement';
+    if (mojE) h += '<div class="info"><div><b>' + e_(t('Mjesto u poretku')) + '</b><span>' + (plasS && mojE.placeTotal != null ? mojE.placeTotal : mj + 1) + '. · ' + (plasS ? 'PB ' + broj(mojE.placementPoints) : broj(mojE.points) + ' ' + e_(t('bodova'))) + '</span></div></div>';
+    if (!nKac) return '<main>' + h + '<p class="opis">' + e_(t('Još nema podataka.')) + '</p></main>';
+    var vr = {}; broji.forEach(function(c){ var k = c.species || 'Riba'; vr[k] = vr[k] || { n:0, p:0, b:0 }; vr[k].n++; if (c.outcome === 'released') vr[k].p++; else vr[k].b++; });
+    h += '<div class="odj">🐟 ' + e_(t('PO VRSTAMA')) + '</div><div class="info">' + Object.keys(vr).map(function(k){ var v = vr[k]; return '<div><b data-bezprijevoda>' + e_(P.vrstaT ? P.vrstaT(k) : k) + '</b><span>' + v.n + ' ' + e_(t('ulova')) + (v.p ? ' · ' + v.p + ' ' + e_(t('pušteno')) : '') + (v.b ? ' · ' + v.b + ' ' + e_(t('na brodu')) : '') + '</span></div>'; }).join('')
+      + (otp ? '<div><b>' + e_(t('Otpalo')) + '</b><span>' + otp + '</span></div>' : '') + '</div>';
+    var sati = kac.map(function(f){ return parseInt(String(f.time || '').slice(0, 2), 10); }).filter(function(x){ return isFinite(x); });
+    if (sati.length){
+      var od = Math.min.apply(0, sati), doo = Math.max.apply(0, sati);
+      if (P.sati && D.statDan === 'danas'){ od = Math.min(od, parseInt(P.sati.od, 10) || od); doo = Math.max(doo, (parseInt(P.sati.do, 10) || doo)); }
+      var n = Math.min(14, doo - od + 1), st = []; for (var i = 0; i < n; i++) st.push(sati.filter(function(x){ return x === od + i; }).length);
+      var mx = Math.max.apply(0, st) || 1, sir = 288 / n;
+      h += '<div class="odj">🕐 ' + e_(t('KAČENJA PO SATU')) + '</div><div class="graf"><svg viewBox="0 0 320 110">' + st.map(function(v, i){ var vis = Math.round(v / mx * 76);
+        return '<rect x="' + (16 + i * sir).toFixed(1) + '" y="' + (88 - vis) + '" width="' + Math.max(6, sir - 8).toFixed(1) + '" height="' + vis + '" rx="4" fill="#2DD4BF"/>' + (v ? '<text x="' + (16 + i * sir + (sir - 8) / 2).toFixed(1) + '" y="' + (84 - vis) + '" text-anchor="middle" font-size="10" fill="#475569">' + v + '</text>' : '')
+          + '<text x="' + (16 + i * sir + (sir - 8) / 2).toFixed(1) + '" y="104" text-anchor="middle" font-size="10" fill="#8a97a8">' + (od + i) + 'h</text>'; }).join('') + '</svg></div>';
+    }
+    var bo = ul.filter(function(c){ return c.fightMin != null; });
+    if (bo.length){
+      var dug = bo.slice().sort(function(a, b){ return b.fightMin - a.fightMin; })[0];
+      h += '<div class="odj">⏱ ' + e_(t('BORBE')) + '</div><div class="info"><div><b>' + e_(t('Najduža')) + '</b><span data-bezprijevoda>' + dug.fightMin + ' ' + e_(t('min')) + ' · ' + e_(P.vrstaT ? P.vrstaT(dug.species || '') : (dug.species || '')) + '</span></div><div><b>' + e_(t('Prosječna')) + '</b><span>' + Math.round(bo.reduce(function(a, c){ return a + c.fightMin; }, 0) / bo.length) + ' ' + e_(t('min')) + '</span></div></div>';
+    }
+    return '<main>' + h + '</main>';
+  }
+
+  /* ---------------- listovi: Sucu privatno, Nazovi suca, Bodovanje ---------------- */
+  function nitHtml(){
+    var sve = ((infoOk() && D.info.poruke) || []).slice(-40);
+    var cek = M.redPor.filter(function(r){ return r.tid === P.tid; });
+    if (!sve.length && !cek.length) return '<p class="opis" style="text-align:center">' + e_(t('Još nema poruka.')) + '</p>';
+    return sve.map(function(m){ return '<div class="p5m' + (m.odSuca ? '' : ' ja') + (m.svima ? ' svima' : '') + '" data-bezprijevoda>' + e_(m.tekst) + '<small>' + (m.odSuca ? e_((m.odSuca && (!m.od || m.od === 'Sudac')) ? t('Sudac') : (m.od || t('Sudac'))) + ' · ' : '') + hhmm(m.at) + (m.svima ? ' · ' + e_(t('svim ekipama')) : '') + '</small></div>'; }).join('')
+      + cek.map(function(r){ return '<div class="p5m ja" style="opacity:.75" data-bezprijevoda>' + e_(r.tekst) + '<small>⏳ ' + e_(t('čeka signal')) + '</small></div>'; }).join('');
+  }
+  function osvjeziNit(){ var n = document.getElementById('p5nit'); if (n){ n.innerHTML = nitHtml(); n.scrollTop = n.scrollHeight; } oznake(); }
+  function listPoruka(){
+    var kraj = P.sati && P.sati.do ? ' ' + P.sati.do : '';
+    return '<div class="rucka"></div><b style="font-size:20px">✉ ' + e_(t('Sucu privatno')) + '</b><p class="opis" style="margin:2px 0 0">' + e_(t('Poruku vidi samo sudac.')) + '</p>'
+      + '<div class="p5nit" id="p5nit">' + nitHtml() + '</div>'
+      + '<div class="cipovi" style="flex-wrap:wrap">' + [t('Vraćamo se u luku'), t('Problem s motorom'), t('Riba još na štapu nakon kraja') + kraj].map(function(x){ return '<button data-p5brzo="' + e_(x) + '">' + e_(x) + '</button>'; }).join('') + '</div>'
+      + '<div class="p5unos"><input class="polje" id="p5tekst" maxlength="1000" placeholder="' + e_(t('Napiši poruku…')) + '"><button class="plavi" data-p5posalji>' + e_(t('Pošalji')) + '</button></div>';
+  }
+  function listSudac(){
+    var T = trn(), tel = T.info_judge_phone ? String(T.info_judge_phone).replace(/[^\d+]/g, '') : '';
+    return '<div class="rucka"></div><b style="font-size:20px">📞 ' + e_(t('Nazovi suca')) + '</b><div class="info" style="margin-top:10px">'
+      + (T.info_judge_name || tel ? '<div><b>' + e_(t('Glavni sudac')) + '</b><span data-bezprijevoda>' + e_(T.info_judge_name || '') + (tel ? ' · <a href="tel:' + e_(tel) + '">' + e_(T.info_judge_phone) + '</a>' : '') + '</span></div>' : '<div><b>' + e_(t('Sudac nije upisan.')) + '</b><span></span></div>')
+      + (T.info_vhf ? '<div><b>' + e_(t('VHF kanal')) + '</b><span>' + e_(T.info_vhf) + '</span></div>' : '') + '</div>'
+      + (tel ? '<a class="plavi" style="display:block;text-align:center;margin-top:12px;text-decoration:none" href="tel:' + e_(tel) + '">📞 ' + e_(t('nazovi')) + '</a>' : '');
+  }
+  function listBodovanje(){
+    var R = lbOk() ? (D.lb.rules || []) : null;
+    if (!R) { ucitajLb(); return '<div class="rucka"></div><b style="font-size:20px">' + e_(t('Pravila bodovanja')) + '</b><p class="opis">' + e_(t('Učitavam…')) + '</p>'; }
+    var plas = (D.lb.tournament || {}).rankingMode === 'placement';
+    return '<div class="rucka"></div><b style="font-size:20px">' + e_(t('Pravila bodovanja')) + '</b>' + (plas ? '<p class="opis">🏅 ' + e_(t('Plasmansko bodovanje — manje je bolje.')) + '</p>' : '')
+      + '<div class="info" style="margin-top:10px">' + R.map(function(r){
+        var d = [];
+        if (r.minMeasure) d.push(e_(t('najmanje')) + ' ' + e_(r.minMeasure));
+        if (r.canRelease) d.push(e_(t('pušteno')) + ' ' + broj(r.releasePts) + ' ' + e_(t('bodova')));
+        if (r.canBoat) d.push(e_(t('na brodu')) + ' ' + (r.tiers && r.tiers.length ? r.tiers.map(function(x){ return broj(x.minKg) + '–' + (x.maxKg == null ? '∞' : broj(x.maxKg)) + ' kg: ' + broj(x.ptsPerKg) + '/kg'; }).join(', ') : broj(r.boatPts) + (r.boatMode === 'perkg' ? ' ' + e_(t('po kg')) : '')));
+        return '<div><b data-bezprijevoda>' + e_(P.vrstaT ? P.vrstaT(r.name) : r.name) + '</b><span>' + d.join(' · ') + '</span></div>'; }).join('') + '</div>';
+  }
+
+  /* ---------------- spoj u v69: ekran tm, listovi, crtaj ---------------- */
+  var origTm = EKR.tm;
+  EKR.tm = function(){
+    var html = origTm.apply(this, arguments);
+    if (!P.on) return html;
+    var tab = S.tmtab;
+    if (tab !== D.zadTab){
+      D.zadTab = tab;
+      if (tab === 'info'){ setTimeout(function(){ ucitajInfo(); oznaciVidjeno(); }, 0); }
+      if ((tab === 'poredak' || tab === 'stat') && Date.now() - D.lbOd > 20000) setTimeout(ucitajLb, 0);
+      if (tab === 'zona') setTimeout(gpsUkljuci, 0);
+    }
+    var nov = tab === 'info' ? ekranInfo() : tab === 'zona' ? ekranZona() : tab === 'poredak' ? ekranPoredak() : tab === 'stat' ? ekranStat() : null;
+    if (!nov){
+      /* Na moru: stvarno upozorenje zone na vrhu */
+      var s = stanjeZone();
+      if (s && s.st !== 'u' && P.dan){
+        var up = '<div class="upoz zona526" style="background:' + (s.st === 'izvan' ? '#fef2f2;border-color:#fecaca;color:#991b1b' : '#fff7ed;border-color:#fed7aa;color:#9a3412') + '">⚠ <div><b>' + (s.st === 'izvan' ? e_(t('Izvan zone')) + ' · ' + broj(s.nm, 2) + ' NM' : broj(s.nm, 2) + ' NM ' + e_(t('do granice zone'))) + '</b>' + (s.st === 'izvan' ? ' — ' + e_(t('Kačenje izvan zone ide sucu s upozorenjem.')) : '') + '</div></div>';
+        html = html.replace('<main>', '<main>' + up);
+      }
+      return html;
+    }
+    var i = html.indexOf('<main>'), j = html.lastIndexOf('</main>');
+    if (i < 0 || j < 0) return html;
+    return html.slice(0, i) + nov + html.slice(j + 7);
+  };
+  var origList = window.listHtml;
+  window.listHtml = function(){
+    if (P.on && LIST){
+      if (LIST.k === 'tm-poruka') return listPoruka();
+      if (LIST.k === 'tm-sudac') return listSudac();
+      if (LIST.k === 'tm-bodovanje') return listBodovanje();
+    }
+    return origList.apply(this, arguments);
+  };
+  var origStatus = P.statusTekst;
+  P.statusTekst = function(){
+    var s = P.dan ? stanjeZone() : null;
+    if (s && s.st === 'izvan') return '⚠ ' + t('IZVAN ZONE');
+    if (s && s.st === 'blizu') return '⚠ ' + broj(s.nm, 1) + ' NM';
+    return origStatus.apply(this, arguments);
+  };
+  function oznake(){
+    if (!naTm()) return;
+    var n = neprocitano(), b = document.querySelector('[data-tmtab="info"]');
+    if (b){ var x = b.querySelector('.p5bad'); if (n && S.tmtab !== 'info'){ if (!x){ x = document.createElement('i'); x.className = 'p5bad'; b.appendChild(x); } x.textContent = n; } else if (x) x.remove(); }
+    var st = document.querySelector('.tmstatus'), s = P.dan ? stanjeZone() : null;
+    if (st){ st.classList.toggle('p5izvan', !!(s && s.st === 'izvan')); st.classList.toggle('p5blizu', !!(s && s.st === 'blizu')); }
+  }
+  var origCrtaj = window.crtaj;
+  window.crtaj = function(){
+    var r = origCrtaj.apply(this, arguments);
+    try{
+      oznake();
+      if (P.on && LIST && LIST.k === 'tm-poruka'){
+        oznaciProcitano();
+        var n = document.getElementById('p5nit'); if (n) n.scrollTop = n.scrollHeight;
+        var u = document.getElementById('p5tekst'); if (u && !u.dataset.p5){ u.dataset.p5 = '1'; u.addEventListener('keydown', function(ev){ if (ev.key === 'Enter'){ ev.preventDefault(); novaPoruka(u.value); u.value = ''; } }); }
+      }
+    }catch(e){}
+    return r;
+  };
+
+  /* ---------------- klikovi ---------------- */
+  document.addEventListener('click', function(ev){
+    if (!P.on) return;
+    var b = ev.target.closest('[data-p5srd],[data-p5srdposalji],[data-p5srdjucer],[data-p5srdpromijeni],[data-p5posalji],[data-p5brzo],[data-p5por],[data-p5stat]');
+    if (!b) return;
+    ev.stopPropagation(); ev.preventDefault();
+    var d = b.dataset;
+    if (d.p5srd){ D.srdN = Math.max(0, Math.min(50, (D.srdN || 0) + Number(d.p5srd))); crtaj(); return; }
+    if (b.hasAttribute('data-p5srdjucer')){ var sj = D.info && D.info.srdele; if (sj) naruci(sj.jucer); return; }
+    if (b.hasAttribute('data-p5srdposalji')){ naruci(D.srdN || 0); return; }
+    if (b.hasAttribute('data-p5srdpromijeni')){ D.srdMijenja = true; D.srdN = (D.info && D.info.srdele && D.info.srdele.paketa) || 0; crtaj(); return; }
+    if (b.hasAttribute('data-p5posalji')){ var u = document.getElementById('p5tekst'); if (u){ novaPoruka(u.value); u.value = ''; u.focus(); } return; }
+    if (d.p5brzo){ novaPoruka(d.p5brzo); return; }
+    if (d.p5por){ D.porDan = d.p5por; crtaj(); return; }
+    if (d.p5stat){ D.statDan = d.p5stat; crtaj(); return; }
+  }, true);
+
+  /* ---------------- vrijeme ---------------- */
+  setInterval(function(){ if (P.on && !document.hidden) ucitajInfo(); }, 30000);
+  setInterval(function(){ if (P.on && !document.hidden && (S.tmtab === 'poredak' || S.tmtab === 'stat')) ucitajLb(); }, 60000);
+  setInterval(function(){ if (P.on && !document.hidden){ posaljiPoruke(); posaljiSrdele(false); if (P.dan) gpsUkljuci(); } }, 15000);
+  window.addEventListener('online', function(){ setTimeout(function(){ posaljiPoruke(); posaljiSrdele(false); ucitajInfo(); }, 1500); });
+  document.addEventListener('visibilitychange', function(){ if (document.hidden) gpsIskljuci(); else if (P.on){ ucitajInfo(); if (P.dan || S.tmtab === 'zona') gpsUkljuci(); } });
+  /* prvi put nakon otvaranja turnira */
+  var cekajOn = setInterval(function(){
+    if (!P.on || !P.tid) return;
+    clearInterval(cekajOn);
+    ucitajInfo(); ucitajLb(); posaljiPoruke(); posaljiSrdele(false); if (P.dan) gpsUkljuci();
+  }, 700);
+  P.p526 = { D:D, ucitajInfo:ucitajInfo, ucitajLb:ucitajLb, stanjeZone:stanjeZone };
+})(typeof P !== 'undefined' ? P : null);
+</script>
+
 </body>
 </html>
