@@ -485,7 +485,15 @@ body.tmmod .uz{color:#0456E8!important}
 .kkoraci span.cek{background:#fef3c7;color:#92400e}
 .info .brzo, main > .brzo{margin:0 0 12px}
 /* 505 · oznaka verzije (da se vidi koja je verzija na mobitelu) */
-body::after{content:'v514';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
+body::after{content:'v515';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
+/* 515 · stanje ribe bojom ruba (Nikola 13.10.) */
+.ulov.rub-zeleno{border-left:5px solid #16a34a;border-radius:0 12px 12px 0}
+.ulov.rub-plavo{border-left:5px solid #2563eb;border-radius:0 12px 12px 0}
+.ulov.rub-zuto{border-left:5px solid #f59e0b;border-radius:0 12px 12px 0}
+.ulov.rub-crveno{border-left:5px solid #dc2626;border-radius:0 12px 12px 0;background:#fef2f2!important}
+.danasbaner{display:flex;align-items:center;gap:8px;width:100%;border:0;border-radius:12px;padding:10px 12px;margin:6px 0 4px;font-weight:800;font-size:14px;text-align:left;cursor:pointer}
+.danasbaner.crveno{background:#fee2e2;color:#991b1b}
+.danasbaner.zuto{background:#fef3c7;color:#92400e}
 /* 500 · video koji putuje */
 .stchip.salje{background:#fef3c7!important;color:#92400e!important}
 /* 499 · statusna traka: „Izađi” uvijek vidljiv i na uskom mobitelu */
@@ -879,7 +887,8 @@ const P = {
         
         ${PONISTI ? `<div class="ponisti">Kačenje ${TM.povijest.length + TM.otvorena.findIndex(o => o.n === PONISTI.n) + 1} zapisano u ${PONISTI.v}<button data-ponisti>Poništi</button></div>` : ''}
         <div class="odj">🎣 DANAS · ${TM.povijest.length} kačenja · ${TM.povijest.filter(h => h.tip === 'brod' || h.tip === 'pust').length} ulova</div>
-        ${TM.povijest.map((h, i) => { const kb = TM.povijest.length - i; const ub = TM.povijest.slice(i).filter(x => x.tip === 'brod' || x.tip === 'pust').length; return `<div class="ulov"><span class="v"><span class="rbr">K${kb}</span>${h.v}<small>${h.tip === 'brod' || h.tip === 'pust' ? 'ulov ' + ub : ((window.PRAVO&&PRAVO.on) ? PRAVO.danTekst() : 'Dan 2')}</small></span>${bico(h.tip)}<div><b>${h.t}</b>${h.izvor ? `<span class="izvor">${h.izvor === 'WhatsApp' ? '💬' : '📻'} javljeno ${h.izvor === 'VHF' ? 'VHF-om' : 'WhatsAppom'} — aplikacija nije radila</span>` : ''}${h.red ? '<span class="stchip fali">⏳ čeka signal</span> ' : ''}<span class="stchip st-${h.st.replace(/ /g, '-')}" data-ulst="${i}">${h.st === 'priznato' && h.bod ? '✓ priznato · ' + h.bod.toLocaleString('hr') : h.st}</span>${''/* 502: „Povuci” maknut (Nikola 13.10.: lako se stisne slučajno) — ispravak radi sudac */}${h.vid !== null && h.vid !== undefined ? (() => { const vk = h.vk ?? h.vid, vi = h.vi ?? h.vid; return ` <span class="stchip ${vk ? 'ok' : (h.vkS ? 'salje' : 'fali')}">🎥 video 1 ${vk ? '✓' : (h.vkS ? '⏳' : '✗')}</span> <span class="stchip ${vi ? 'ok' : (h.viS ? 'salje' : 'fali')}">🎥 video 2 ${vi ? '✓' : (h.viS ? '⏳' : '✗')}</span>`; })() : ''}${h.sl ? ` <span class="stchip ok">📷 slika${(h.ns || 1) > 1 ? ' ×' + h.ns : ''} ✓</span>` : ''}${h.st === 'poslano sucu' && h.vid && !(window.PRAVO&&PRAVO.on) ? '<div class="salje"><i><span style="width:60%"></span></i><small>Video se šalje… 60 % · bez zvuka</small></div>' : ''}${h.st === 'traži dokaz' ? `<div class="dokaz">⚖ <b>Sudac traži dokaz:</b> ${h.dokaz}<button data-pril="h:${i}:v">🎥 Pošalji dokaz</button></div>` : ''}${h.st === 'odbijeno' ? `<div class="odbij">✕ <b>Nije priznato:</b> ${h.razlog}<button data-ulprig="${i}">Prigovor (do 17:30)</button></div>` : ''}${(() => { if (h.vid === null || h.vid === undefined) return ''; const vk = h.vk ?? h.vid, vi = h.vi ?? h.vid; if ((vk || h.vkS) && (vi || h.viS)) return ''; return `<div class="faliv">⚠ Fali video — sudac ga treba za priznavanje<div class="skgumbi" style="margin-top:6px">${vk || h.vkS ? '' : `<button data-hv="${i}:k">📎 Video 1 · kačenje</button>`}${vi || h.viS ? '' : `<button data-hv="${i}:i">📎 Video 2 · ${h.tip === 'brod' ? 'izvlačenje' : 'puštanje'}</button>`}</div></div>`; })()}${h.vid !== null && h.st !== 'priznato' && h.st !== 'odbijeno' ? `<div class="prilbar mali"><button data-pril="h:${i}:v">＋ 🎥 ${h.vid ? 'Još video' : 'Video'}</button><button data-pril="h:${i}:s">＋ 📷 ${h.sl ? 'Još slika' : 'Slika'}</button></div>` : ''}</div></div>`; }).join('')}`}</main>`,
+        ${(window.PRAVO&&PRAVO.on) ? PRAVO.banerDanas() : ''}
+        ${TM.povijest.map((h, i) => { const kb = TM.povijest.length - i; const ub = TM.povijest.slice(i).filter(x => x.tip === 'brod' || x.tip === 'pust').length; return `<div class="ulov${(window.PRAVO&&PRAVO.on&&h.boja) ? ' rub-' + h.boja : ''}" data-ulovi="${i}"><span class="v"><span class="rbr">K${kb}</span>${h.v}<small>${h.tip === 'brod' || h.tip === 'pust' ? 'ulov ' + ub : ((window.PRAVO&&PRAVO.on) ? PRAVO.danTekst() : 'Dan 2')}</small></span>${bico(h.tip)}<div><b>${h.t}</b>${h.izvor ? `<span class="izvor">${h.izvor === 'WhatsApp' ? '💬' : '📻'} javljeno ${h.izvor === 'VHF' ? 'VHF-om' : 'WhatsAppom'} — aplikacija nije radila</span>` : ''}${h.red ? '<span class="stchip fali">⏳ čeka signal</span> ' : ''}<span class="stchip st-${h.st.replace(/ /g, '-')}" data-ulst="${i}">${h.st === 'priznato' && h.bod ? '✓ priznato · ' + h.bod.toLocaleString('hr') : h.st}</span>${''/* 502: „Povuci” maknut (Nikola 13.10.: lako se stisne slučajno) — ispravak radi sudac */}${h.vid !== null && h.vid !== undefined ? (() => { const vk = h.vk ?? h.vid, vi = h.vi ?? h.vid; return ` <span class="stchip ${vk ? 'ok' : (h.vkS ? 'salje' : 'fali')}">🎥 video 1 ${vk ? '✓' : (h.vkS ? '⏳' : '✗')}</span> <span class="stchip ${vi ? 'ok' : (h.viS ? 'salje' : 'fali')}">🎥 video 2 ${vi ? '✓' : (h.viS ? '⏳' : '✗')}</span>`; })() : ''}${h.sl ? ` <span class="stchip ok">📷 slika${(h.ns || 1) > 1 ? ' ×' + h.ns : ''} ✓</span>` : ''}${h.st === 'poslano sucu' && h.vid && !(window.PRAVO&&PRAVO.on) ? '<div class="salje"><i><span style="width:60%"></span></i><small>Video se šalje… 60 % · bez zvuka</small></div>' : ''}${h.st === 'traži dokaz' ? `<div class="dokaz">⚖ <b>Sudac traži dokaz:</b> ${h.dokaz}<button data-pril="h:${i}:v">🎥 Pošalji dokaz</button></div>` : ''}${h.st === 'odbijeno' ? `<div class="odbij">✕ <b>Nije priznato:</b> ${h.razlog}<button data-ulprig="${i}">Prigovor (do 17:30)</button></div>` : ''}${(() => { if (h.vid === null || h.vid === undefined) return ''; if ((window.PRAVO&&PRAVO.on) && h.st === 'traži dokaz') return ''; const vk = h.vk ?? h.vid, vi = h.vi ?? h.vid; if ((vk || h.vkS) && (vi || h.viS)) return ''; return `<div class="faliv">⚠ Fali video — sudac ga treba za priznavanje${(window.PRAVO&&PRAVO.on&&h.boja==='crveno'&&h.starostMin) ? ' · ' + h.starostMin + ' min' : ''}<div class="skgumbi" style="margin-top:6px">${vk || h.vkS ? '' : `<button data-hv="${i}:k">📎 Video 1 · kačenje</button>`}${vi || h.viS ? '' : `<button data-hv="${i}:i">📎 Video 2 · ${h.tip === 'brod' ? 'izvlačenje' : 'puštanje'}</button>`}</div></div>`; })()}${h.vid !== null && h.st !== 'priznato' && h.st !== 'odbijeno' ? `<div class="prilbar mali"><button data-pril="h:${i}:v">＋ 🎥 ${h.vid ? 'Još video' : 'Video'}</button><button data-pril="h:${i}:s">＋ 📷 ${h.sl ? 'Još slika' : 'Slika'}</button></div>` : ''}</div></div>`; }).join('')}`}</main>`,
       zona: `<main><div class="offline">📥 Karta zone i krugovi spremljeni na mobitel — rade bez signala</div><div class="karta" style="background:#0a3d6b"><svg viewBox="0 0 320 330"><polygon points="30,30 290,22 300,300 40,310" fill="rgba(34,197,94,.10)" stroke="#22C55E" stroke-width="2"/><circle cx="250" cy="70" r="26" fill="rgba(239,68,68,.18)" stroke="#EF4444" stroke-dasharray="4 3"/><text x="226" y="74" fill="#fecaca" font-size="9">Brak Svetac</text><line x1="160" y1="26" x2="170" y2="305" stroke="#22C55E" stroke-dasharray="5 5" opacity=".7"/><line x1="35" y1="170" x2="295" y2="160" stroke="#22C55E" stroke-dasharray="5 5" opacity=".7"/>${[['A',95,100],['B',225,95],['D',100,245],['C',230,240]].map(([n, x, y]) => `<text x="${x}" y="${y}" fill="#86efac" font-size="18" font-weight="800">${n}</text>`).join('')}<g transform="translate(215,205) rotate(35)"><path d="M0,-14 L9,10 L0,5 L-9,10Z" fill="#fff"/></g><circle cx="190" cy="250" r="5" fill="#EF4444"/><text x="198" y="254" fill="#fecaca" font-size="11">kačenje 08:12</text></svg></div>
         <div class="info" style="margin-top:12px"><div><b>Status</b><span style="color:#16a34a;font-weight:800">● u zoni · sektor C</span></div><div><b>Do granice</b><span>1,8 NM → istok</span></div><div><b>Pozicija</b><span>42°38,180′ N · 017°58,261′ E</span></div><div><b>Kurs · brzina</b><span>035° · 6,2 čv</span></div><div><b>Najbliži brod</b><span>TRITON · 0,9 NM</span></div><div><b>⬇ Moj trag (GPX)</b><span>nakon ribolova ›</span></div><div><b>⭕ Zabranjeni krug</b><span>Brak Svetac · 1,4 NM</span></div></div>
         <p class="opis" style="margin-top:8px">Upozorenje stiže 0,5 NM prije granice i kad je drugi brod bliže od 0,5 NM.</p></main>`,
@@ -1517,6 +1526,9 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     'RIBOLOV':['FISHING','FISCHEN','PESCA'], 'DANAS SE NE LOVI':['NO FISHING TODAY','HEUTE KEIN FISCHEN','OGGI NIENTE PESCA'],
     'do kraja':['to end','bis Ende','alla fine'], 'ribolov završen':['fishing over','Fischen beendet','pesca finita'],
     'veza ✓':['online ✓','online ✓','online ✓'], 'čeka':['waiting','wartet','in attesa'],
+    'Sudac traži dokaz':['The judge asks for proof','Der Richter verlangt einen Beweis','Il giudice chiede una prova'],
+    'riba čeka video':['fish waiting for video','Fisch wartet auf Video','pesce in attesa di video'],
+    'sucu fali video':['the judge is missing the video','dem Richter fehlt das Video','al giudice manca il video'],
     'Video je velik':['The video is large','Das Video ist groß','Il video è grande'],
     'slanje može trajati nekoliko minuta. Brže: 📹 Snimi u aplikaciji.':['sending may take a few minutes. Faster: 📹 Record in the app.','das Senden kann einige Minuten dauern. Schneller: 📹 In der App aufnehmen.','l’invio può richiedere alcuni minuti. Più veloce: 📹 Registra nell’app.'],
     'sudac primio':['judge received','Richter erhalten','ricevuto dal giudice'], 'sudac traži dokaz':['judge asks for proof','Richter verlangt Beweis','il giudice chiede una prova'],
@@ -1615,7 +1627,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
 
   function odjava(tiho){
     M.access = null; M.refresh = null; M.istek = 0; M.tid = null;
-    M.jaCache = null; M.stCache = null; M.red = []; M.veze = {}; M.uloviId = {}; M.otv = []; M.nedavno = {}; M.poz = []; spremi();   // 498: odjava = čist početak
+    M.jaCache = null; M.stCache = null; M.red = []; M.veze = {}; M.uloviId = {}; M.otv = []; M.nedavno = {}; M.poz = []; M.podsj = {}; spremi();   // 498: odjava = čist početak
     P.on = false; document.body.classList.remove('pravo');
     S.prijavljen = false; try{ localStorage.setItem('bgf-prijava', '0'); }catch(e){}
     if (!tiho) tost('Odjavljen si.');
@@ -1797,7 +1809,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
   /* ---------- usklađivanje v69 stanja s redom (crtaj omotač) ---------- */
   var origCrtaj = window.crtaj;
   window.crtaj = function(){
-    if (P.on) uskladiLokalno();
+    if (P.on){ uskladiLokalno(); try{ oznaciSlanje(); }catch(e){} }
     var r = origCrtaj.apply(this, arguments);
     if (P.on){ javiGrupi(); pamtiBorbe(); }
     return r;
@@ -1977,8 +1989,56 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
       if (!h.vkS && np('hook')) h.vk = true;
       if (!h.viS && (np('release') || np('boat'))) h.vi = true;
       if (h.vk !== null && h.vi !== null && h.vk && h.vi) h.vid = true;
+      /* 515: boja ruba — zeleno priznato · plavo čeka suca · žuto u tijeku / sudac traži · crveno treba reagirati */
+      var t0 = h.tPrijave || (h.kljuc && M.nedavno && M.nedavno[h.kljuc] && M.nedavno[h.kljuc].t) || null;
+      var fali = h.tip !== 'otp' && h.vid !== null && h.vid !== undefined && !((h.vk ?? h.vid) && (h.vi ?? h.vid));
+      h.starostMin = t0 ? Math.max(0, Math.floor((sad - t0) / 60000)) : 0;
+      if (h.st === 'priznato') h.boja = 'zeleno';
+      else if (h.st === 'odbijeno') h.boja = 'crveno';
+      else if (h.st === 'traži dokaz') h.boja = 'zuto';
+      else if (h.red || h.vkS || h.viS) h.boja = 'zuto';
+      else if (fali) h.boja = (t0 && sad - t0 >= 5 * 60000) ? 'crveno' : 'zuto';
+      else h.boja = 'plavo';
+      h.fali = fali;
     });
   }
+  /* baner na vrhu DANAS: što čeka ekipu (klik → skok na tu ribu) */
+  P.banerDanas = function(){
+    var crv = TM.povijest.map(function(h, i){ return [h, i]; }).filter(function(x){ return x[0].boja === 'crveno' && x[0].fali; });
+    var dok = TM.povijest.map(function(h, i){ return [h, i]; }).filter(function(x){ return x[0].st === 'traži dokaz'; });
+    var b = '';
+    if (dok.length) b += '<button class="danasbaner zuto" data-skok="' + dok[0][1] + '">⚖ ' + e_(t('Sudac traži dokaz')) + (dok.length > 1 ? ' · ' + dok.length : '') + '</button>';
+    if (crv.length) b += '<button class="danasbaner crveno" data-skok="' + crv[0][1] + '">⚠ ' + crv.length + ' · ' + e_(t('riba čeka video')) + '</button>';
+    return b;
+  };
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-skok]'); if (!b) return;
+    var el = document.querySelector('[data-ulovi="' + b.dataset.skok + '"]');
+    if (el){ el.scrollIntoView({ behavior:'smooth', block:'center' }); }
+  });
+  /* podsjetnik: crveno (fali video ≥5 min, ništa se ne šalje) → vibracija + obavijest,
+     najviše 3 puta, svakih 10 min; „sudac traži dokaz” → odmah, jednom */
+  M.podsj = M.podsj || {};
+  function provjeriPodsjetnike(){
+    if (!P.on) return;
+    var sad = Date.now(), n = TM.povijest.length;
+    TM.povijest.forEach(function(h, i){
+      var id = h.catchId || h.kljuc; if (!id) return;
+      var z = M.podsj[id] || (M.podsj[id] = { n:0, zad:0, dokaz:false });
+      var kb = 'K' + (n - i);
+      if (h.st === 'traži dokaz' && !z.dokaz){
+        z.dokaz = true; tost(kb + ': ' + t('Sudac traži dokaz') + (h.dokaz ? ' — ' + h.dokaz : ''), true);
+        try{ navigator.vibrate && navigator.vibrate([250, 120, 250]); }catch(e){}
+      }
+      if (h.boja === 'crveno' && h.fali && z.n < 3 && (z.n === 0 || sad - z.zad >= 10 * 60000)){
+        z.n++; z.zad = sad;
+        tost(kb + ': ' + t('sucu fali video') + ' (' + h.starostMin + ' min)', true);
+        try{ navigator.vibrate && navigator.vibrate(300); }catch(e){}
+      }
+    });
+    spremi();
+  }
+  setInterval(function(){ if (P.on){ oznaciSlanje(); if (!LIST && S.v === 'tm') crtaj(); provjeriPodsjetnike(); } }, 30000);
   function dodajVideo(dat, meta){
     var z = { id:kljuc(), tid:P.tid, blob:dat, type:dat.type || 'video/mp4', size:dat.size, snimljeno:new Date(dat.lastModified || Date.now()).toISOString(), meta:meta, pokusaja:0, t:Date.now() };
     return vSpremi(z).then(function(){ P.videaCeka++; P.cekaju.push(meta); osvjeziPrikaz(); obradiVidee(); });
@@ -2153,6 +2213,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
       dokaz: c.stanje === 'proof_requested' ? (c.razlog || 'Sudac traži dokaz.') : null,
       razlog: c.stanje === 'rejected' ? c.razlog : null, bod: c.points, izvor: sudac ? 'sudac' : null,
       kor: ev.map(function(e){ return [hhmm(e.at), t(KOR[e.kind] || e.kind) + (e.note ? ' · ' + e.note : '')]; }),
+      tPrijave: ev.length && ev[0].at ? Date.parse(ev[0].at) : null,
       catchId:c.catchId, hookId:c.hookId || null, nDod: pr.filter(function(p){ return p.kind === 'video' && p.purpose === 'other'; }).length };
   }
   function osvjezi(){
@@ -2195,7 +2256,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
         TM.otvorena.push({ n:900 + TM.otvorena.length, v:String(h.hook_time || '').slice(0,5), ko:(h.note === 'Aplikacija' ? 'aplikacija' : 'sudac'), sek:Math.max(0, Math.round((Date.now() - t0) / 1000)), t0:t0,
           rib: h.angler_id ? (P.ribIme[h.angler_id] || null) : null, ribPoslan:true, dbId:h.id, kljuc:k, potvrdeno:!!h.confirmed_at });
       });
-      spremi(); osvjeziPrikaz();
+      spremi(); osvjeziPrikaz(); provjeriPodsjetnike();
     }).catch(function(er){ if (!er.odServera){ P.veza = false; osvjeziPrikaz(); } });
   }
   P.osvjezi = osvjezi;
