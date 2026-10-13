@@ -1493,7 +1493,10 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     'Dan':['Day','Tag','Giorno'], 'danas se ne lovi':['no fishing today','heute kein Fischen','oggi niente pesca'],
     'RIBOLOV':['FISHING','FISCHEN','PESCA'], 'DANAS SE NE LOVI':['NO FISHING TODAY','HEUTE KEIN FISCHEN','OGGI NIENTE PESCA'],
     'do kraja':['to end','bis Ende','alla fine'], 'ribolov završen':['fishing over','Fischen beendet','pesca finita'],
-    'veza ✓':['online ✓','online ✓','online ✓'], '✕ bez signala':['✕ no signal','✕ kein Signal','✕ nessun segnale'], 'red':['queue','Warteschlange','coda'],
+    'veza ✓':['online ✓','online ✓','online ✓'], 'čeka':['waiting','wartet','in attesa'],
+    'Video nije primljen':['Video not accepted','Video nicht angenommen','Video non accettato'],
+    'Video spremljen na mobitel — šalje se sucu.':['Video saved on the phone — sending to the judge.','Video auf dem Handy gespeichert — wird gesendet.','Video salvato sul telefono — invio al giudice.'],
+    'Nema signala za video. Šalje se samo kad signal dođe.':['No signal for the video. It sends itself when signal returns.','Kein Signal für das Video. Wird automatisch gesendet.','Nessun segnale per il video. Parte da solo quando torna il segnale.'], '✕ bez signala':['✕ no signal','✕ kein Signal','✕ nessun segnale'], 'red':['queue','Warteschlange','coda'],
   };
   function t(hr){ var j = { en:0, de:1, it:2 }[S.jezik]; var r = PREV[hr]; return (j === undefined || !r) ? hr : (r[j] || hr); }
   P.t = t;
@@ -1569,7 +1572,10 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
   /* ---------- uloge → moja ekipa ---------- */
   P.ja = null;
   function kreni(izPrijave){
-    return api('/api/me/roles').then(function(d){
+    return api('/api/me/roles').then(function(d){ M.jaCache = d; spremi(); return d; }, function(er){
+      if (!er.odServera && M.jaCache){ P.veza = false; return M.jaCache; }   // bez signala: zapamćeno
+      throw er;
+    }).then(function(d){
       P.ja = d;
       P.ime = d.person ? (d.person.first_name + ' ' + d.person.last_name) : ((d.user && d.user.name) || '');
       var ekipne = (d.roles || []).filter(function(u){ return u.role === 'team' && u.teamId; });
@@ -1589,7 +1595,10 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
   }
 
   function otvoriTurnir(tid, teamId){
-    return api('/api/tournaments/' + tid + '/state').then(function(st){
+    return api('/api/tournaments/' + tid + '/state').then(function(st){ M.stCache = { tid:tid, st:st }; spremi(); return st; }, function(er){
+      if (!er.odServera && M.stCache && M.stCache.tid === tid){ P.veza = false; return M.stCache.st; }   // bez signala: zapamćeno
+      throw er;
+    }).then(function(st){
       var tr = st.tournament || {};
       var ek = (st.teams || []).find(function(x){ return String(x.id) === String(teamId); }) || { id:teamId, name:'', anglers:[] };
       P.tid = tid; P.ekipa = ek; P.turnir = tr; M.tid = tid; spremi();
@@ -1611,7 +1620,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
       TMS = P.dan ? 'ribolov' : 'gotovo';
       LIST = null; PONISTI = null;
       zatvoriPrijavu(); window.scrollTo(0, 0);
-      crtaj(); osvjezi(); posaljiRed();
+      crtaj(); osvjezi(); posaljiRed(); brojiVidee().then(function(){ osvjeziPrikaz(); obradiVidee(); });
     }).catch(function(er){ tost(er.message, true); });
   }
 
@@ -1626,7 +1635,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     return (min >= 60 ? Math.floor(min/60) + ' h ' : '') + (min % 60) + ' min ' + t('do kraja');
   };
   P.statusTekst = function(){ return P.dan ? ('● ' + t('RIBOLOV') + (P.sati ? ' · ' + P.sati.od + '–' + P.sati.do : '')) : '■ ' + t('DANAS SE NE LOVI'); };
-  P.ostTekst = function(){ return (P.veza ? t('veza ✓') : t('✕ bez signala')) + ' · ' + t('red') + ' ' + M.red.length; };
+  P.ostTekst = function(){ return (P.veza ? t('veza ✓') : t('✕ bez signala')) + ' · ' + t('red') + ' ' + M.red.length + (P.videaCeka ? ' · 🎥 ' + P.videaCeka + ' ' + t('čeka') : ''); };
 
   /* ---------- red za slanje ---------- */
   function uRed(vrsta, tijelo, k){ M.red.push({ vrsta:vrsta, tijelo:tijelo, kljuc:k, tid:P.tid }); spremi(); posaljiRed(); }
@@ -1649,13 +1658,12 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
       if (r.vrsta === 'hook' && d.hooked){
         M.veze[r.kljuc] = d.hooked.id;
         var o = TM.otvorena.find(function(x){ return x.kljuc === r.kljuc; }); if (o) o.dbId = d.hooked.id;
-        posaljiCekajuceVidee(r.kljuc);
+        obradiVidee();
       }
       if (r.vrsta === 'catch' && d.catch){
         tost('Poslano sucu ✓');
-        var cek = P.cekaVideo['u:' + r.kljuc] || [];
-        delete P.cekaVideo['u:' + r.kljuc];
-        cek.forEach(function(c){ posaljiVideo(c.f, { catchId:d.catch.id, purpose:c.purpose }); });
+        M.uloviId = M.uloviId || {}; M.uloviId[r.kljuc] = d.catch.id;
+        obradiVidee();
         setTimeout(osvjezi, 600);
       }
       spremi(); saljem = false; posaljiRed(); osvjeziPrikaz();
@@ -1762,7 +1770,67 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     }
   }, true);
 
-  /* ---------- video: v69 priloziVideo → R2 ---------- */
+  /* ---------- RED VIDEA NA MOBITELU (490+, Nikola: „video nije došao”) ----------
+     Svaki video se prvo SPREMI na mobitel (IndexedDB), pa se šalje dok ne
+     stigne: ponavlja kod slabog signala, preživi zatvaranje aplikacije,
+     čeka da kačenje/ulov dobije broj na serveru. Briše se tek kad server
+     potvrdi upis. Ako server video odbije (npr. sudac je već odlučio),
+     javi se jasno i video se makne iz reda. */
+  var VDB = null, VMEM = [];
+  function vdb(){
+    if (VDB) return Promise.resolve(VDB);
+    return new Promise(function(ok){
+      try{
+        var r = indexedDB.open('bgf-videi', 1);
+        r.onupgradeneeded = function(){ r.result.createObjectStore('v', { keyPath:'id' }); };
+        r.onsuccess = function(){ VDB = r.result; ok(VDB); };
+        r.onerror = function(){ ok(null); };
+      }catch(e){ ok(null); }
+    });
+  }
+  function vSvi(){ return vdb().then(function(db){ if (!db) return VMEM.slice(); return new Promise(function(ok){ var q = db.transaction('v').objectStore('v').getAll(); q.onsuccess = function(){ ok(q.result || []); }; q.onerror = function(){ ok([]); }; }); }); }
+  function vSpremi(z){ return vdb().then(function(db){ if (!db){ VMEM = VMEM.filter(function(x){ return x.id !== z.id; }).concat([z]); return; } return new Promise(function(ok){ var t = db.transaction('v', 'readwrite'); t.objectStore('v').put(z); t.oncomplete = ok; t.onerror = ok; }); }); }
+  function vBrisi(id){ return vdb().then(function(db){ if (!db){ VMEM = VMEM.filter(function(x){ return x.id !== id; }); return; } return new Promise(function(ok){ var t = db.transaction('v', 'readwrite'); t.objectStore('v').delete(id); t.oncomplete = ok; t.onerror = ok; }); }); }
+  P.videaCeka = 0;
+  function brojiVidee(){ return vSvi().then(function(l){ P.videaCeka = l.length; }); }
+  function dodajVideo(dat, meta){
+    var z = { id:kljuc(), tid:P.tid, blob:dat, type:dat.type || 'video/mp4', size:dat.size, snimljeno:new Date(dat.lastModified || Date.now()).toISOString(), meta:meta, pokusaja:0, t:Date.now() };
+    return vSpremi(z).then(function(){ P.videaCeka++; osvjeziPrikaz(); obradiVidee(); });
+  }
+  var vSaljem = false;
+  function obradiVidee(){
+    if (vSaljem || !M.access) return;
+    vSaljem = true;
+    vSvi().then(function(lista){
+      lista = lista.sort(function(a, b){ return a.t - b.t; });
+      var z = lista.find(function(x){
+        var m = x.meta;
+        if (m.catchId || m.hookedFishId) return true;
+        if (m.kac) return !!M.veze[m.kac];
+        if (m.ulovKljuc) return !!(M.uloviId && M.uloviId[m.ulovKljuc]);
+        return false;
+      });
+      if (!z){ vSaljem = false; return brojiVidee().then(osvjeziPrikaz); }
+      var m = z.meta;
+      var cilj = { purpose:m.purpose,
+        hookedFishId: m.hookedFishId || (m.kac ? M.veze[m.kac] : null),
+        catchId: m.catchId || (m.ulovKljuc ? M.uloviId[m.ulovKljuc] : null) };
+      if (cilj.catchId) cilj.hookedFishId = null;
+      return posaljiVideo(z, cilj).then(function(){
+        return vBrisi(z.id).then(function(){ vSaljem = false; brojiVidee().then(function(){ osvjeziPrikaz(); setTimeout(osvjezi, 500); obradiVidee(); }); });
+      }).catch(function(er){
+        if (er && er.odServera && er.status !== 401 && er.status !== 503){
+          tost(t('Video nije primljen') + ': ' + er.message, true);
+          return vBrisi(z.id).then(function(){ vSaljem = false; brojiVidee().then(osvjeziPrikaz); });
+        }
+        z.pokusaja++; return vSpremi(z).then(function(){ vSaljem = false; P.veza = !!(er && er.odServera); brojiVidee().then(osvjeziPrikaz); });
+      });
+    }).catch(function(){ vSaljem = false; });
+  }
+  setInterval(obradiVidee, 15000);
+  window.addEventListener('online', function(){ setTimeout(obradiVidee, 800); });
+
+  /* ---------- video: v69 priloziVideo → red videa → R2 ---------- */
   var origPrilozi = window.priloziVideo;
   window.priloziVideo = function(gotovo){
     if (!P.on) return origPrilozi(gotovo);
@@ -1774,39 +1842,34 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     f.onchange = function(){
       var dat = f.files && f.files[0]; if (!dat) return;
       var url = URL.createObjectURL(dat) + '#t=0.1';
-      if (cilj.ulovKljuc){                                   // video 2 prije nego ulov postoji
-        var k = 'u:' + cilj.ulovKljuc; (P.cekaVideo[k] = P.cekaVideo[k] || []).push({ f:dat, purpose:cilj.purpose });
-        tost('Video 2 ide sucu zajedno s ishodom.'); gotovo(url); return;
-      }
-      if (cilj.kac){
-        var hid = M.veze[cilj.kac];
-        if (!hid){ var kk = 'k:' + cilj.kac; (P.cekaVideo[kk] = P.cekaVideo[kk] || []).push({ f:dat, purpose:'hook' }); tost('Video 1 čeka da kačenje stigne sucu, pa ide samo.'); gotovo(url); return; }
-        posaljiVideo(dat, { hookedFishId:hid, purpose:'hook' }, function(){ gotovo(url); });
-        return;
-      }
-      if (cilj.catchId) posaljiVideo(dat, { catchId:cilj.catchId, purpose:cilj.purpose }, function(){ gotovo(url); osvjezi(); });
+      var meta = cilj.ulovKljuc ? { ulovKljuc:cilj.ulovKljuc, purpose:cilj.purpose }
+               : cilj.kac ? { kac:cilj.kac, purpose:'hook' }
+               : { catchId:cilj.catchId, purpose:cilj.purpose };
+      dodajVideo(dat, meta).then(function(){
+        tost(cilj.ulovKljuc ? 'Video 2 ide sucu zajedno s ishodom.' : 'Video spremljen na mobitel — šalje se sucu.');
+        gotovo(url);
+      });
     };
     f.click();
   };
-  function posaljiCekajuceVidee(kac){
-    var kk = 'k:' + kac, lista = P.cekaVideo[kk] || []; delete P.cekaVideo[kk];
-    lista.forEach(function(c){ posaljiVideo(c.f, { hookedFishId:M.veze[kac], purpose:'hook' }); });
-  }
-  function posaljiVideo(dat, c, gotovo){
-    var opis = { hookedFishId:c.hookedFishId || null, catchId:c.catchId || null, kind:'video', purpose:c.purpose, contentType:dat.type || 'video/mp4', sizeBytes:dat.size };
+  /* jedno slanje jednog videa iz reda; vraća Promise (red odlučuje o ponavljanju) */
+  function posaljiVideo(z, c){
+    var dat = z.blob;
+    var opis = { hookedFishId:c.hookedFishId || null, catchId:c.catchId || null, kind:'video', purpose:c.purpose, contentType:z.type || 'video/mp4', sizeBytes:z.size };
     tost('Šaljem video sucu…');
-    api('/api/attachments/upload-url', { method:'POST', body:JSON.stringify(opis) }).then(function(u){
+    return api('/api/attachments/upload-url', { method:'POST', body:JSON.stringify(opis) }).then(function(u){
       return new Promise(function(ok, ne){
         var x = new XMLHttpRequest(); x.open('PUT', u.uploadUrl); x.setRequestHeader('Content-Type', u.contentType);
         x.upload.onprogress = function(e){ if (e.lengthComputable) tostEl.textContent = 'Šaljem video sucu… ' + Math.round(e.loaded / e.total * 100) + ' %'; };
         x.onload = function(){ x.status >= 200 && x.status < 300 ? ok(u) : ne(new Error('Spremište javlja ' + x.status)); };
-        x.onerror = function(){ ne(new Error('Nema signala za video. Pokušaj ponovno kad bude signala.')); };
+        x.onerror = function(){ ne(new Error('Nema signala za video. Šalje se samo kad signal dođe.')); };
+        x.ontimeout = x.onerror; x.timeout = 10 * 60 * 1000;
         x.send(dat);
       });
     }).then(function(u){
-      return api('/api/attachments', { method:'POST', body:JSON.stringify(Object.assign({}, opis, { key:u.key, recordedAt:new Date(dat.lastModified || Date.now()).toISOString() })) });
-    }).then(function(){ tost('Video poslan sucu ✓'); if (navigator.vibrate) navigator.vibrate(40); if (gotovo) gotovo(); })
-      .catch(function(er){ tost(er.message, true); });
+      return api('/api/attachments', { method:'POST', body:JSON.stringify(Object.assign({}, opis, { key:u.key, recordedAt:z.snimljeno })) });
+    }).then(function(){ tost('Video poslan sucu ✓'); if (navigator.vibrate) navigator.vibrate(40); })
+      .catch(function(er){ if (!er.odServera) tost(er.message, true); throw er; });
   }
 
   /* ---------- sa servera: kačenja u tijeku i „DANAS” sa stanjem kod suca ---------- */
@@ -1872,6 +1935,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
 
   /* ---------- start ---------- */
   if (M.access){
+    setTimeout(function(){ brojiVidee().then(obradiVidee); }, 1500);
     S.prijavljen = false;
     kreni(false).catch(function(er){ if (er.status === 401) odjava(true); else tost(er.message, true); });
   } else {
