@@ -485,7 +485,7 @@ body.tmmod .uz{color:#0456E8!important}
 .kkoraci span.cek{background:#fef3c7;color:#92400e}
 .info .brzo, main > .brzo{margin:0 0 12px}
 /* 505 · oznaka verzije (da se vidi koja je verzija na mobitelu) */
-body::after{content:'v551';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
+body::after{content:'v552';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
 /* 515 · stanje ribe bojom ruba (Nikola 13.10.) */
 .ulov.rub-zeleno{border-left:5px solid #16a34a;border-radius:0 12px 12px 0}
 .ulov.rub-plavo{border-left:5px solid #2563eb;border-radius:0 12px 12px 0}
@@ -1220,6 +1220,7 @@ function listHtml(){
   if (!LIST) return '';
   const B = BOJA[S.t] || '#071A2D';
   if (LIST.k === 'jek' && window.JAVNO && JAVNO.listEkipa) return JAVNO.listEkipa(LIST.id);   // 547: prava ekipa
+  if (LIST.k === 'tm-kod' && window.EKOD) return EKOD.list();   // 552: pravi ekipni kod
   if (LIST.k === 'jezik') return `<div class="rucka"></div><b style="font-size:21px">Jezik · Language · Sprache · Lingua</b><div class="mjlista" style="margin-top:8px">${[['hr','🇭🇷','Hrvatski'],['en','🇬🇧','English'],['de','🇩🇪','Deutsch'],['it','🇮🇹','Italiano']].map(([k, z, n]) => `<button data-jz="${k}">${z} <b>${n}</b><small>${S.jezik === k ? '✓' : ''}</small></button>`).join('')}</div>`;
   if (LIST.k === 'tv') return `<div class="rucka"></div><b style="font-size:20px">📺 Board preko cijelog ekrana</b><p class="opis">Okreni mobitel položeno — otvara se isti board kao na TV-u (felun2027.bgf.live): poredak, kačenja, video, sponzori. Može se poslati i na televizor (Chromecast / AirPlay).</p><div style="aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#071A2D;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:4px;padding:6px"><div style="background:#0c2440;border-radius:6px"></div><div style="background:#0b1f3a;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#9fb3cf;font-size:11px">video</div><div style="background:#0c2440;border-radius:6px"></div></div><button class="plavi" style="margin-top:12px">Otvori board</button>`;
   if (LIST.k === 'dijeli') return `<div class="rucka"></div><b style="font-size:20px">↗ Podijeli</b><p class="opis">Poveznica vodi na board turnira — tamo su poredak, svi događaji i sponzori. Tko ima aplikaciju, otvara mu se turnir u aplikaciji.</p><div class="info"><div><b>${BOARD[LIST.i]}.bgf.live</b><span>kopiraj</span></div></div><div class="lbgumbi" style="margin-top:10px">${['WhatsApp','Facebook','Instagram','Viber'].map(x => `<button style="background:#071A2D">${x}</button>`).join('')}</div>`;
@@ -1655,6 +1656,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
   P.sesija = function(d){ M.access = d.access_token; M.refresh = d.refresh_token; M.istek = Date.now() + (d.expires_in || 3600) * 1000; spremi(); return kreni(true); };
   P.api = function(put, opt){ return api(put, opt); };
   P.imaSesiju = function(){ return !!M.access; };
+  P.kreni = function(){ return kreni(true); };   // 552: nakon povezivanja ekipnim kodom
   P.otvoriPrijavu = function(){ otvoriPrijavu(); };
   P.zatvoriPrijavu = function(){ zatvoriPrijavu(); };
   P.odjavaSve = function(){ odjava(); };
@@ -3655,6 +3657,73 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
   NOVO['E-pošta'] = ['E-mail','E-Mail','E-mail']; NOVO['Vrsta'] = ['Type','Art','Tipo'];
 })();
 var REG;
+</script>
+
+<script>
+/* ===== 552 · EKIPNI KOD (K5) — član bez računa / zamjenski mobitel =====
+   POST /api/ekipa/kod. Bez prijave → sesija računa ekipe → turnirski način.
+   Prijavljen natjecatelj → veže se uz svoje ime u posadi → uloge se osvježe. */
+(function(){
+  'use strict';
+  var PR = window.PRAVO || {};
+  var BACKEND = PR.BACKEND || 'https://bgf-live-backend.vercel.app';
+  var e_ = PR.e || function(x){ return String(x == null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  var E = { kod:'', greska:'', salje:false, ok:null };
+  var NOVO = {
+    'Kod daje kapetan ili organizator — za člana bez računa ili zamjenski mobitel. Vrijedi dok traje turnir.':['The captain or organiser gives you the code — for a member without an account or a spare phone. Valid while the tournament lasts.','Den Code gibt der Kapitän oder Veranstalter — für Mitglieder ohne Konto oder ein Ersatzhandy. Gültig während des Turniers.','Il codice lo dà il capitano o l’organizzatore — per un membro senza account o un telefono di riserva. Valido durante il torneo.'],
+    'Uđi u ekipu':['Join the team','Dem Team beitreten','Entra nella squadra'],
+    'Ako imaš račun, kod te poveže s tvojim imenom na popisu posade.':['If you have an account, the code links you to your name on the crew list.','Wenn du ein Konto hast, verknüpft dich der Code mit deinem Namen auf der Crewliste.','Se hai un account, il codice ti collega al tuo nome nella lista dell’equipaggio.'],
+    'Povezan si s ekipom':['You are linked to the team','Du bist mit dem Team verbunden','Sei collegato alla squadra'],
+    'Mobitel ekipe':['Team phone','Team-Handy','Telefono della squadra']
+  };
+  function T(hr){ var j = { en:0, de:1, it:2 }[S.jezik]; var r = NOVO[hr] || RJ[hr]; return (j === undefined || !r) ? hr : (r[j] || hr); }
+  window.EKOD = {
+    list: function(){
+      return '<div class="rucka"></div><b style="font-size:20px">🔑 ' + T('Ekipni kod') + '</b><p class="opis">' + T('Kod daje kapetan ili organizator — za člana bez računa ili zamjenski mobitel. Vrijedi dok traje turnir.') + '</p>'
+        + '<input class="polje" data-ekod value="' + e_(E.kod) + '" placeholder="ABC-DEF" maxlength="7" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:4px;font-weight:800;font-size:22px;text-align:center">'
+        + (E.greska ? '<p class="opis" style="color:#b91c1c">' + e_(E.greska) + '</p>' : '')
+        + (E.ok ? '<p class="opis" style="color:#16a34a">✓ ' + e_(E.ok) + '</p>' : '')
+        + '<button class="plavi" data-ekodda style="margin-top:10px"' + (E.salje ? ' disabled' : '') + '>' + T('Uđi u ekipu') + '</button>'
+        + '<p class="opis" style="margin-top:8px">' + T('Ako imaš račun, kod te poveže s tvojim imenom na popisu posade.') + '</p>';
+    }
+  };
+  function crtajL(){ crtaj(); var i = document.querySelector('[data-ekod]'); if (i && !E.ok) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
+  function posalji(){
+    var k = E.kod.toUpperCase().replace(/[\s\-_.]/g, '');
+    if (k.length !== 6) { E.greska = T('Ekipni kod ima 6 znakova (slova i brojke).'); return crtajL(); }
+    E.salje = true; E.greska = ''; crtaj();
+    var h = { 'Content-Type':'application/json' }; var tok = PR.M && PR.M.access; if (tok) h.Authorization = 'Bearer ' + tok;
+    fetch(BACKEND + '/api/ekipa/kod', { method:'POST', headers:h, body:JSON.stringify({ kod:k }) })
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status)); return d; }); })
+      .then(function(d){
+        E.salje = false; E.kod = '';
+        var naziv = d.ekipa ? d.ekipa.naziv + (d.ekipa.broj ? ' #' + d.ekipa.broj : '') : '';
+        if (d.nacin === 'povezan') { E.ok = T('Povezan si s ekipom') + ' ' + naziv; LIST = null; return Promise.resolve(PR.kreni ? PR.kreni() : null).catch(function(){}); }
+        LIST = null; E.ok = null;
+        if (PR.M) PR.M.tid = d.tournamentId;
+        return Promise.resolve(PR.sesija ? PR.sesija(d) : null).catch(function(){});
+      }, function(er){ E.salje = false; E.greska = er.message; crtajL(); });
+  }
+  document.addEventListener('input', function(ev){ if (ev.target.hasAttribute && ev.target.hasAttribute('data-ekod')) { E.kod = ev.target.value; E.greska = ''; } });
+  document.addEventListener('keydown', function(ev){ if (ev.key === 'Enter' && ev.target.hasAttribute && ev.target.hasAttribute('data-ekod')) { ev.preventDefault(); posalji(); } });
+  document.addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-ekodda],[data-tmlist="kod"]'); if (!b) return;
+    if (b.hasAttribute('data-tmlist')) { E.greska = ''; E.ok = null; return; }   // v69 otvara list; samo očisti poruke
+    ev.stopPropagation(); ev.preventDefault(); if (!E.salje) posalji();
+  }, true);
+  NOVO['Ekipni kod'] = ['Team code','Team-Code','Codice squadra'];
+  NOVO['Ekipni kod ima 6 znakova (slova i brojke).'] = ['The team code has 6 characters (letters and digits).','Der Team-Code hat 6 Zeichen (Buchstaben und Ziffern).','Il codice squadra ha 6 caratteri (lettere e cifre).'];
+  /* Moj profil na mobitelu ekipe (račun ekipe nema osobu u registru) */
+  if (window.REG && REG.profil){ var star = REG.profil; REG.profil = function(){
+    var ja = PR.ja || (PR.M && PR.M.jaCache), em = ja && ja.user && ja.user.email;
+    if (em && /@ekipe\.bgf\.live$/.test(em)) {
+      var ime = (PR.ekipa && PR.ekipa.name) || (ja.user.name || '').replace(/^Ekipa /, '');
+      return vrh(T('Mobitel ekipe'), false) + '<main><div class="mala"><span class="av">🔑</span><div><b data-bezprijevoda>' + e_(ime) + '</b><small>' + T('Mobitel ekipe') + ' · ' + T('Ekipni kod') + '</small></div></div>'
+        + '<div class="info" style="margin-top:12px">' + (PR.tid ? '<div data-tm style="cursor:pointer"><b>' + T('Moj turnir') + '</b><span>›</span></div>' : '')
+        + '<div data-jezik style="cursor:pointer"><b>🌐 Jezik / Language</b><span>' + ({ hr:'Hrvatski', en:'English', de:'Deutsch', it:'Italiano' })[S.jezik] + ' ›</span></div><div data-rodjava style="cursor:pointer"><b>' + T('Odjava') + '</b><span>›</span></div></div></main>';
+    }
+    return star(); }; }
+})();
 </script>
 
 </body>
