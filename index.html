@@ -485,7 +485,7 @@ body.tmmod .uz{color:#0456E8!important}
 .kkoraci span.cek{background:#fef3c7;color:#92400e}
 .info .brzo, main > .brzo{margin:0 0 12px}
 /* 505 · oznaka verzije (da se vidi koja je verzija na mobitelu) */
-body::after{content:'v548';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
+body::after{content:'v551';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
 /* 515 · stanje ribe bojom ruba (Nikola 13.10.) */
 .ulov.rub-zeleno{border-left:5px solid #16a34a;border-radius:0 12px 12px 0}
 .ulov.rub-plavo{border-left:5px solid #2563eb;border-radius:0 12px 12px 0}
@@ -934,13 +934,13 @@ const P = {
       ['🏛 Organizator', [['org_prijava','Nova prijava ekipe (+ e-pošta)'],['org_crveno','Prijava s crvenom oznakom'],['org_sastav','Promjena sastava']]],
       ['⚖ Sudac', [['sud_ulov','Nova prijava ulova (zvuk i vibracija)'],['sud_dva','Dva različita ishoda za isto kačenje'],['sud_povuceno','Povučena prijava'],['sud_prigovor','Novi prigovor']]]];
     return vrh('Obavijesti', false) + `<main><p class="opis">Što su poslali drugi članovi iste ekipe ne šalje se kao obavijest — vidi se u popisu „Danas”.</p>${g.map(([n, st]) => `<div class="mk"><h3>${n}</h3>${st.map(([k, t]) => `<button class="obsw" data-obsw="${k}"><span>${t}</span><i class="${OBAV[k] ? 'on' : ''}"></i></button>`).join('')}</div>`).join('')}</main>`; },
-  profil: () => S.prijavljen ? vrh('Ivan Kovač', false) + `<main><div class="mala"><span class="av">IK</span><div><b>BGF-10007 · ŠRK Felun</b><small>Dozvola 2027 · važeća do 31. 12.</small></div></div>
+  profil: () => window.REG && window.PRAVO && PRAVO.imaSesiju && PRAVO.imaSesiju() ? REG.profil() : S.prijavljen ? vrh('Ivan Kovač', false) + `<main><div class="mala"><span class="av">IK</span><div><b>BGF-10007 · ŠRK Felun</b><small>Dozvola 2027 · važeća do 31. 12.</small></div></div>
       <div class="odj">📝 MOJA PRIJAVA</div>${PRIJAVA.odjavljena ? '<div class="mk"><b>CORTO je odjavljena s Big Game Felun 2027.</b><p class="opis" style="margin:4px 0 0">Organizator je dobio obavijest.</p></div>' : `<div class="mk"><h3>CORTO · Big Game Felun 2027<span>kapetan Gordon Svalina</span></h3><div class="red3" style="gap:6px"><span class="stchip ok">✓ ${PRIJAVA.st}</span><span class="stchip ${PRIJAVA.upl ? 'ok' : 'fali'}">${PRIJAVA.upl ? '✓ plaćeno' : 'nije plaćeno'}</span><span class="stchip ok">startni broj #${PRIJAVA.br}</span></div><div class="skgumbi" style="margin-top:8px"><button class="sir mini2" data-sastav>👥 Promijeni sastav (do 20. 5.)</button><button class="sir mini2" data-odjavi>Odjavi ekipu</button></div></div>`}
       <div class="odj">🗓 MOJI TURNIRI</div><div class="info">${[['Big Game Felun 2027','22. 5. · za 222 dana · prijava ✓','felun27'],['Big Game Orebić 2027','21. 5. · prijave otvorene · prijavi ekipu ›','orebic27'],['12. Državno prvenstvo','listopad · prijave od 1. 6.','']].map(([a, b2, id]) => `<div ${id ? `data-t="${id}" style="cursor:pointer"` : ''}><b>${a}</b><span>${b2}</span></div>`).join('')}</div>
       <div class="odj">🏆 MOJI REZULTATI</div><div class="brojke"><div><b class="sport">11</b><small>nastupa</small></div><div><b class="sport">9</b><small>ulova</small></div><div><b class="sport">182 kg</b><small>najveća riba</small></div><div><b class="sport">3×</b><small>pobjeda ekipe</small></div></div>
       <div class="info">${[['Kup Feluna 2026','CORTO · posada','2.'],['Tunistra 2026','Corto 1 · posada','1.'],['Big Game Felun 2025','CORTO · posada','3.']].map(r => `<div><b>${r[0]}</b><span>${r[1]} · ${r[2]}</span></div>`).join('')}<div data-os="IK" style="cursor:pointer"><b>Javni profil</b><span>svi nastupi od 2011. ›</span></div></div><div class="info"><div><b>Možda su ovo tvoji rezultati</b><span>2 na potvrdi ›</span></div><div><b>Dozvole 2027</b><span>godišnja ✓ · ＋ dodaj</span></div><div><b>Obnovi dozvolu za 2028.</b><span>›</span></div><div data-jezik style="cursor:pointer"><b>🌐 Jezik / Language</b><span>${({hr:'Hrvatski',en:'English',de:'Deutsch',it:'Italiano'})[S.jezik]} ›</span></div><div data-tema style="cursor:pointer"><b>🌓 Tema aplikacije</b><span>${({auto:'kao mobitel', svijetla:'svijetla', tamna:'tamna'})[TEMA]} ›</span></div><div data-tema-alati style="cursor:pointer"><b>🛠 Tema alata (sudac, organizator, Studio)</b><span>${TEMA_ALATI === 'tamna' ? 'tamna — kao judge' : 'svijetla'} ›</span></div><div data-v="obavijesti" style="cursor:pointer"><b>🔔 Obavijesti</b><span>${Object.values(OBAV).filter(Boolean).length} uključeno ›</span></div></div><div class="odj">🧭 MOJE ULOGE</div><div class="uloge">${[['mas','👑','Master','master.bgf.live · sve','#0456E8'],['tm','🎣','Ekipa · CORTO #7','turnirski način · Big Game Felun 2027','#0456E8'],['sud','⚖','Sudac','Big Game Felun 2027','#B45309'],['pom','🧑‍⚖️','Pomoćni sudac','brod CORTO · Felun 2027','#B45309'],['org','🏛','Organizator','ŠRK Felun · admin','#15803D'],['stu','🎬','Studio','Felun 2027 · board i sponzori','#7C3AED']].map(([k, i, a, b, c]) => `<button ${k === 'tm' ? 'data-tm' : 'data-uloga="' + k + '"'} style="--c:${c}"><span>${i}</span><div><b>${a}</b><small>${b}</small></div><i>›</i></button>`).join('')}</div><p class="opis">Uloge dodjeljuje Master; svaka vidi samo svoj turnir.</p><button class="sir" style="margin-top:10px" data-odjava>Odjava</button><button class="sir" style="margin-top:10px;color:#b91c1c;border-color:#fecaca" data-tmlist="brisi">Obriši račun</button></main>`
     : vrh('Profil', false) + `<main><p class="opis">Publika ne treba račun. Račun trebaju natjecatelji, kapetani, suci i organizatori.</p><button class="plavi" data-prijava>Prijavi se</button><button class="sir" style="margin-top:10px" data-reg>Registriraj se</button><button class="sir" style="margin-top:10px" data-tmlist="kod">🔑 Imam ekipni kod</button><div class="info" style="margin-top:16px"><div data-jezik style="cursor:pointer"><b>🌐 Jezik / Language</b><span>${({hr:'Hrvatski',en:'English',de:'Deutsch',it:'Italiano'})[S.jezik]} ›</span></div></div></main>`,
-  reg: () => { const K = ['Račun','Uvjeti','Podaci','Jesi li ovo ti?','Klub','Dozvola']; const k = S.korak;
+  reg: () => { if (window.REG) return REG.ekran(); const K = ['Račun','Uvjeti','Podaci','Jesi li ovo ti?','Klub','Dozvola']; const k = S.korak;
     const sad = [
       `<div class="mk"><h3>🔐 Račun</h3><button class="sir">Nastavi s Googleom</button><button class="sir" style="margin-top:8px">Nastavi s Appleom</button><p class="opis" style="text-align:center">ili e-poštom</p><label class="lab">E-pošta</label><input class="polje" value="ivan.kovac@primjer.hr"><label class="lab">Lozinka (najmanje 8 znakova)</label><input class="polje" type="password" value="lozinka123"><label class="lab">Ponovi lozinku</label><input class="polje" type="password" value="lozinka123"><div class="robot"><span>✓</span> Provjera da nisi robot (Cloudflare Turnstile — nevidljiva)</div><p class="opis">Ista osoba s Googleom i e-poštom spaja se po istoj adresi. Zaboravljena lozinka → kod na e-poštu.</p></div>`,
       `<div class="mk"><h3>📜 Uvjeti i potvrda</h3><label class="kvac" style="align-items:flex-start"><input type="checkbox" checked> <span>Prihvaćam uvjete i pravila privatnosti BGF.LIVE. Ime, ekipa i rezultati su javni.</span></label><p class="opis">Videi ulova čuvaju se bez zvuka, samo za suca.</p><label class="lab">Kod iz e-pošte (6 znamenki — samo kod prijave e-poštom)</label><input class="polje" value="482 913"></div>`,
@@ -1651,6 +1651,14 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
       .then(function(){ b.disabled = false; });
   };
 
+  /* 551 · registracija: sesija iz koda e-poštom ide istim putem kao prijava lozinkom */
+  P.sesija = function(d){ M.access = d.access_token; M.refresh = d.refresh_token; M.istek = Date.now() + (d.expires_in || 3600) * 1000; spremi(); return kreni(true); };
+  P.api = function(put, opt){ return api(put, opt); };
+  P.imaSesiju = function(){ return !!M.access; };
+  P.otvoriPrijavu = function(){ otvoriPrijavu(); };
+  P.zatvoriPrijavu = function(){ zatvoriPrijavu(); };
+  P.odjavaSve = function(){ odjava(); };
+
   function odjava(tiho){
     M.access = null; M.refresh = null; M.istek = 0; M.tid = null;
     M.jaCache = null; M.stCache = null; M.red = []; M.veze = {}; M.uloviId = {}; M.otv = []; M.nedavno = {}; M.poz = []; M.podsj = {}; spremi();   // 498: odjava = čist početak
@@ -1688,6 +1696,8 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
       var naziv = function(id){ var t = (d.tournaments || []).find(function(x){ return x.id === id; }); return t ? t.name : id; };
       if (!ekipne.length){
         zatvoriPrijavu();
+        /* 551: natjecatelj iz registra (ili usred registracije) bez ekipe → Moj profil */
+        if (window.REG && (d.person || REG.uTijeku())) { REG.bezEkipe(d); return; }
         tost('Prijavljen si, ali nisi upisan ni u jednu ekipu. Za suđenje otvori sučev panel.', true);
         return;
       }
@@ -3421,6 +3431,230 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     else if (b.dataset.jekg) otvori('ekipa', 'ekKljuc', b.dataset.jekg);
   }, true);
 })();
+</script>
+
+<script>
+/* ===== 551 · REGISTRACIJA I MOJ PROFIL (aplikacija) =====
+   E-pošta → kod od 6 znamenki → podaci + privola → „Jesi li ovo ti?” → klub → dozvola → BGF broj.
+   Rute: /api/auth/kod, /api/auth/kod/provjeri, /api/me/kandidati, /api/me/profil, /api/public/klubovi.
+   „Jesi li ovo ti?” ne preuzima osobu odmah — zahtjev čeka Mastera (potvrda = stari BGF broj). */
+(function(){
+  'use strict';
+  var PR = window.PRAVO || {};
+  var BACKEND = PR.BACKEND || 'https://bgf-live-backend.vercel.app';
+  var e_ = PR.e || function(x){ return String(x == null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  var VERZIJA = '2026-10';
+  var R = { korak:0, mod:'reg', email:'', kod:'', d:{ ime:'', prezime:'', nadimak:'', datumRodjenja:'', mjesto:'', drzava:'HR', privola:false }, kandidati:null, preuzmi:null,
+            klubovi:null, klub:{ tip:'popis', id:'', ostalo:'' }, dz:{ vrsta:'annual', broj:'', od:'', do:'' }, greska:'', salje:false, gotovo:null, izPrijave:0, tece:false, poslanKod:false };
+  var PROF = { d:null, salje:false, greska:'', uredi:null, novaDz:false };
+
+  var NOVO = {
+    'Kod':['Code','Code','Codice'], 'Račun':['Account','Konto','Account'], 'Podaci':['Details','Daten','Dati'], 'Klub':['Club','Verein','Club'], 'Dozvola':['Licence','Lizenz','Licenza'],
+    'Upiši svoju e-poštu — poslat ćemo ti kod od 6 znamenki. Lozinka ne treba.':['Enter your e-mail — we will send you a 6-digit code. No password needed.','Gib deine E-Mail ein — wir senden dir einen 6-stelligen Code. Kein Passwort nötig.','Inserisci la tua e-mail — ti invieremo un codice di 6 cifre. Nessuna password.'],
+    'Pošalji kod':['Send code','Code senden','Invia codice'], 'Potvrdi':['Confirm','Bestätigen','Conferma'], 'Dalje':['Next','Weiter','Avanti'], 'Natrag':['Back','Zurück','Indietro'], 'Odustani':['Cancel','Abbrechen','Annulla'],
+    'Završi':['Finish','Fertig','Fine'], 'Preskoči':['Skip','Überspringen','Salta'], 'Spremi':['Save','Speichern','Salva'],
+    'Prijava s Googleom i Appleom stiže uskoro.':['Sign-in with Google and Apple is coming soon.','Anmeldung mit Google und Apple kommt bald.','L’accesso con Google e Apple arriva presto.'],
+    'Kod iz e-pošte (6 znamenki)':['Code from the e-mail (6 digits)','Code aus der E-Mail (6 Ziffern)','Codice dall’e-mail (6 cifre)'],
+    'Pošalji novi kod':['Send a new code','Neuen Code senden','Invia un nuovo codice'],
+    'Ime':['First name','Vorname','Nome'], 'Prezime':['Last name','Nachname','Cognome'], 'Nadimak (nije obavezno)':['Nickname (optional)','Spitzname (optional)','Soprannome (facoltativo)'],
+    'Datum rođenja · privatno':['Date of birth · private','Geburtsdatum · privat','Data di nascita · privata'], 'Mjesto':['Town','Ort','Località'], 'Država (HR, SI, IT…)':['Country (HR, SI, IT…)','Land (HR, SI, IT…)','Paese (HR, SI, IT…)'],
+    'Prihvaćam uvjete korištenja i pravila privatnosti BGF.LIVE. Ime, ekipa i rezultati su javni; datum rođenja i mjesto vide samo organizatori turnira.':['I accept the BGF.LIVE terms of use and privacy policy. Name, team and results are public; date of birth and town are seen only by tournament organisers.','Ich akzeptiere die Nutzungsbedingungen und Datenschutzregeln von BGF.LIVE. Name, Team und Ergebnisse sind öffentlich; Geburtsdatum und Ort sehen nur Turnierveranstalter.','Accetto i termini d’uso e l’informativa privacy di BGF.LIVE. Nome, squadra e risultati sono pubblici; data di nascita e località le vedono solo gli organizzatori.'],
+    'Ovo su osobe iz arhive i s turnira s tvojim imenom, a bez računa. Ako je jedna od njih ti, označi je — Master potvrđuje i tada preuzimaš stari BGF broj i svoje nastupe.':['These are people from the archive and tournaments with your name and no account. If one of them is you, select it — the Master confirms and you then take over your old BGF number and appearances.','Das sind Personen aus dem Archiv und von Turnieren mit deinem Namen, ohne Konto. Wenn eine davon du bist, wähle sie — der Master bestätigt, dann übernimmst du deine alte BGF-Nummer und Teilnahmen.','Queste sono persone dall’archivio e dai tornei con il tuo nome, senza account. Se una sei tu, selezionala — il Master conferma e poi prendi il tuo vecchio numero BGF e le partecipazioni.'],
+    'Ništa od ovoga — ja sam nov/a':['None of these — I am new','Keine davon — ich bin neu','Nessuna di queste — sono nuovo/a'],
+    'Nismo našli nikoga s tvojim imenom bez računa. Dobit ćeš novi BGF broj.':['We found no one with your name without an account. You will get a new BGF number.','Niemand mit deinem Namen ohne Konto gefunden. Du bekommst eine neue BGF-Nummer.','Nessuno con il tuo nome senza account. Riceverai un nuovo numero BGF.'],
+    'bez kluba':['no club','kein Verein','nessun club'], 'klub nije na popisu':['club not on the list','Verein nicht in der Liste','club non in elenco'], 'Naziv kluba':['Club name','Vereinsname','Nome del club'],
+    'Klub se potvrđuje svake godine; članska iskaznica se ne traži.':['The club is confirmed every year; no membership card needed.','Der Verein wird jedes Jahr bestätigt; kein Mitgliedsausweis nötig.','Il club si conferma ogni anno; non serve la tessera.'],
+    'Godišnja':['Annual','Jahres','Annuale'], '7-dnevna':['7-day','7 Tage','7 giorni'], '3-dnevna':['3-day','3 Tage','3 giorni'], '1-dnevna':['1-day','1 Tag','1 giorno'],
+    'Broj dozvole':['Licence number','Lizenznummer','Numero licenza'], 'Vrijedi od':['Valid from','Gültig ab','Valida dal'], 'do':['to','bis','al'],
+    'Bez slike dozvole. Nove dozvole dodaješ sam u profilu.':['No photo of the licence. You add new licences yourself in your profile.','Kein Foto der Lizenz. Neue Lizenzen fügst du selbst im Profil hinzu.','Nessuna foto della licenza. Le nuove licenze le aggiungi tu nel profilo.'],
+    'TVOJ BROJ':['YOUR NUMBER','DEINE NUMMER','IL TUO NUMERO'], 'Dobrodošao/la u BGF.LIVE!':['Welcome to BGF.LIVE!','Willkommen bei BGF.LIVE!','Benvenuto/a in BGF.LIVE!'],
+    'Moj profil':['My profile','Mein Profil','Il mio profilo'], 'Dovrši registraciju':['Finish registration','Registrierung abschließen','Completa la registrazione'],
+    'Prijavljen si, ali još nemaš profil natjecatelja.':['You are signed in but do not have an angler profile yet.','Du bist angemeldet, hast aber noch kein Anglerprofil.','Hai effettuato l’accesso ma non hai ancora un profilo.'],
+    '📄 DOZVOLE':['📄 LICENCES','📄 LIZENZEN','📄 LICENZE'], '🏛 KLUB':['🏛 CLUB','🏛 VEREIN','🏛 CLUB'], '👤 PODACI':['👤 DETAILS','👤 DATEN','👤 DATI'], '🗂 JESI LI OVO TI?':['🗂 IS THIS YOU?','🗂 BIST DU DAS?','🗂 SEI TU?'],
+    '＋ Dodaj dozvolu':['＋ Add licence','＋ Lizenz hinzufügen','＋ Aggiungi licenza'], 'Uredi':['Edit','Bearbeiten','Modifica'], 'Obriši':['Delete','Löschen','Elimina'],
+    'nema važeće dozvole':['no valid licence','keine gültige Lizenz','nessuna licenza valida'], 'važeća do':['valid until','gültig bis','valida fino al'],
+    'čeka potvrdu Mastera':['awaiting Master confirmation','wartet auf Master-Bestätigung','in attesa di conferma del Master'], 'potvrđeno':['confirmed','bestätigt','confermato'], 'odbijeno':['rejected','abgelehnt','rifiutato'],
+    'Javni profil':['Public profile','Öffentliches Profil','Profilo pubblico'], 'Odjava':['Sign out','Abmelden','Esci'],
+    'Ime i prezime mijenja samo BGF (Master) — javi se ako treba ispravak.':['Only BGF (Master) changes the name — get in touch if it needs correcting.','Nur BGF (Master) ändert den Namen — melde dich, falls eine Korrektur nötig ist.','Solo BGF (Master) modifica il nome — contattaci se serve una correzione.'],
+    'Pošalji mi kod na e-poštu':['Send me a code by e-mail','Code per E-Mail senden','Inviami un codice via e-mail'],
+    'Zahtjev čeka potvrdu Mastera. Kad potvrdi, preuzimaš stari BGF broj i svoje nastupe.':['The request awaits Master confirmation. Once confirmed, you take over your old BGF number and appearances.','Die Anfrage wartet auf die Bestätigung des Masters. Danach übernimmst du deine alte BGF-Nummer und Teilnahmen.','La richiesta attende la conferma del Master. Dopo prendi il tuo vecchio numero BGF e le partecipazioni.'],
+    'Kod je poslan na':['Code sent to','Code gesendet an','Codice inviato a'],
+    'Ne vidiš poruku? Provjeri neželjenu poštu.':['Don’t see it? Check your spam folder.','Keine Nachricht? Spam-Ordner prüfen.','Non la vedi? Controlla lo spam.']
+  };
+  Object.keys(NOVO).forEach(function(k){ if (!RJ[k]) RJ[k] = NOVO[k]; });
+  KLJUCEVI.length = 0; Object.keys(RJ).sort(function(a, b){ return b.length - a.length; }).forEach(function(k){ KLJUCEVI.push(k); });
+  function T(hr){ var j = { en:0, de:1, it:2 }[S.jezik]; var r = NOVO[hr] || RJ[hr]; return (j === undefined || !r) ? hr : (r[j] || hr); }
+
+  function json(put, opt){
+    return fetch(BACKEND + put, opt).then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ if (!r.ok) throw Object.assign(new Error(d.error || 'HTTP ' + r.status), { status:r.status }); return d; }); });
+  }
+  function api(put, opt){ return PR.api ? PR.api(put, opt) : json(put, opt); }
+  function iso(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+  function zadanaDozvola(vr){ var od = new Date(), d = new Date(od);
+    if (vr === 'annual') { R.dz.od = od.getFullYear() + '-01-01'; R.dz.do = od.getFullYear() + '-12-31'; return; }
+    d.setDate(d.getDate() + ({ '7day':6, '3day':2, '1day':0 })[vr]); R.dz.od = iso(od); R.dz.do = iso(d); }
+  zadanaDozvola('annual');
+  function crtajR(){ R.salje = false; crtaj(); }
+
+  /* ---------- registracija ---------- */
+  var K = ['Račun','Kod','Podaci','Jesi li ovo ti?','Klub','Dozvola'];
+  function polje(lab, kljuc, vr, tip, extra){ return '<label class="lab">' + lab + '</label><input class="polje" data-r="' + kljuc + '" value="' + e_(vr) + '"' + (tip ? ' type="' + tip + '"' : '') + (extra || '') + '>'; }
+  REG = window.REG = {
+    uTijeku: function(){ return R.tece; },
+    bezEkipe: function(d){ PROF.d = null; if (R.tece) return; if (Date.now() - R.izPrijave < 20000) { S.v = 'profil'; window.scrollTo(0, 0); } crtaj(); },
+    pocni: function(mod, email){ R.mod = mod || 'reg'; R.korak = (PR.imaSesiju && PR.imaSesiju()) ? 2 : 0; R.email = email || R.email; R.greska = ''; R.gotovo = null; R.tece = true; S.v = 'reg'; LIST = null; window.scrollTo(0, 0); crtaj(); },
+    ekran: function(){
+      if (R.gotovo) {
+        var g = R.gotovo;
+        return vrh('BGF.LIVE', false) + '<main><div class="mk" style="text-align:center"><h3>' + T('Dobrodošao/la u BGF.LIVE!') + '</h3><div class="mala" style="justify-content:center;margin:12px 0"><b class="sport" style="font-size:22px">' + T('TVOJ BROJ') + ' · BGF-' + g.bgf + '</b></div>'
+          + (g.zahtjev ? '<p class="opis">' + T('Zahtjev čeka potvrdu Mastera. Kad potvrdi, preuzimaš stari BGF broj i svoje nastupe.') + ' (BGF-' + g.zahtjev + ')</p>' : '')
+          + '<button class="plavi" data-rprofil style="margin-top:10px">' + T('Moj profil') + '</button></div></main>';
+      }
+      var k = R.korak, h = '';
+      if (k === 0) h = '<div class="mk"><h3>🔐 ' + T('Račun') + '</h3><p class="opis">' + T('Upiši svoju e-poštu — poslat ćemo ti kod od 6 znamenki. Lozinka ne treba.') + '</p>'
+        + polje(T('E-pošta') || 'E-pošta', 'email', R.email, 'email', ' autocomplete="email" inputmode="email"') + '<p class="opis" style="margin-top:10px">' + T('Prijava s Googleom i Appleom stiže uskoro.') + '</p></div>';
+      if (k === 1) h = '<div class="mk"><h3>✉ ' + T('Kod') + '</h3><p class="opis">' + T('Kod je poslan na') + ' <b data-bezprijevoda>' + e_(R.email) + '</b>. ' + T('Ne vidiš poruku? Provjeri neželjenu poštu.') + '</p>'
+        + polje(T('Kod iz e-pošte (6 znamenki)'), 'kod', R.kod, 'text', ' inputmode="numeric" autocomplete="one-time-code" maxlength="6" style="letter-spacing:6px;font-size:22px;text-align:center"')
+        + '<button class="sir" data-rnovikod style="margin-top:8px">' + T('Pošalji novi kod') + '</button></div>';
+      if (k === 2) h = '<div class="mk"><h3>👤 ' + T('Podaci') + '</h3>' + polje(T('Ime'), 'ime', R.d.ime, 'text', ' autocomplete="given-name"') + polje(T('Prezime'), 'prezime', R.d.prezime, 'text', ' autocomplete="family-name"')
+        + polje(T('Nadimak (nije obavezno)'), 'nadimak', R.d.nadimak) + polje(T('Datum rođenja · privatno'), 'datumRodjenja', R.d.datumRodjenja, 'date') + polje(T('Mjesto'), 'mjesto', R.d.mjesto) + polje(T('Država (HR, SI, IT…)'), 'drzava', R.d.drzava, 'text', ' maxlength="2" style="text-transform:uppercase"')
+        + '<label class="kvac" style="align-items:flex-start;margin-top:12px"><input type="checkbox" data-r="privola"' + (R.d.privola ? ' checked' : '') + '> <span>' + T('Prihvaćam uvjete korištenja i pravila privatnosti BGF.LIVE. Ime, ekipa i rezultati su javni; datum rođenja i mjesto vide samo organizatori turnira.') + '</span></label></div>';
+      if (k === 3) { var L = R.kandidati || [];
+        h = '<div class="mk"><h3>🗂 ' + T('Jesi li ovo ti?') + '</h3>' + (L.length ? '<p class="opis">' + T('Ovo su osobe iz arhive i s turnira s tvojim imenom, a bez računa. Ako je jedna od njih ti, označi je — Master potvrđuje i tada preuzimaš stari BGF broj i svoje nastupe.') + '</p>'
+          + L.map(function(x){ return '<label class="kvac mala" style="cursor:pointer"><input type="radio" name="rkand" data-rkand="' + x.bgf + '"' + (R.preuzmi === x.bgf ? ' checked' : '') + '> <div><b data-bezprijevoda>' + e_(x.ime) + ' · BGF-' + x.bgf + '</b><small>' + x.nastupa + ' nastupa' + (x.zadnji ? ' · ' + x.zadnji.godina + '. <span data-bezprijevoda>' + e_(x.zadnji.turnir) + '</span>' : '') + '</small></div></label>'; }).join('')
+          + '<label class="kvac mala" style="cursor:pointer"><input type="radio" name="rkand" data-rkand="0"' + (!R.preuzmi ? ' checked' : '') + '> <div><b>' + T('Ništa od ovoga — ja sam nov/a') + '</b></div></label>'
+          : '<p class="opis">' + T('Nismo našli nikoga s tvojim imenom bez računa. Dobit ćeš novi BGF broj.') + '</p>') + '</div>'; }
+      if (k === 4) { var KL = R.klubovi || [];
+        h = '<div class="mk"><h3>🏛 ' + T('Klub') + ' (' + new Date().getFullYear() + '.)</h3><select class="polje" data-r="klubId"><option value="">—</option>' + KL.map(function(x){ return '<option value="' + e_(x.id) + '"' + (R.klub.tip === 'popis' && R.klub.id === x.id ? ' selected' : '') + ' data-bezprijevoda>' + e_(x.naziv) + (x.mjesto ? ' · ' + e_(x.mjesto) : '') + '</option>'; }).join('') + '</select>'
+          + '<div class="cipovi" style="flex-wrap:wrap;margin-top:8px"><button data-rklub="bez" aria-pressed="' + (R.klub.tip === 'bez') + '">' + T('bez kluba') + '</button><button data-rklub="ostalo" aria-pressed="' + (R.klub.tip === 'ostalo') + '">' + T('klub nije na popisu') + '</button></div>'
+          + (R.klub.tip === 'ostalo' ? polje(T('Naziv kluba'), 'klubOstalo', R.klub.ostalo) : '') + '<p class="opis">' + T('Klub se potvrđuje svake godine; članska iskaznica se ne traži.') + '</p></div>'; }
+      if (k === 5) h = '<div class="mk"><h3>📄 ' + T('Dozvola') + '</h3><label class="lab">' + T('Vrsta') + '</label><div class="cipovi" style="flex-wrap:wrap">' + [['annual','Godišnja'],['7day','7-dnevna'],['3day','3-dnevna'],['1day','1-dnevna']].map(function(x){ return '<button data-rvrsta="' + x[0] + '" aria-pressed="' + (R.dz.vrsta === x[0]) + '">' + T(x[1]) + '</button>'; }).join('') + '</div>'
+        + polje(T('Broj dozvole'), 'dzBroj', R.dz.broj) + '<div style="display:flex;gap:8px"><div style="flex:1">' + polje(T('Vrijedi od'), 'dzOd', R.dz.od, 'date') + '</div><div style="flex:1">' + polje(T('do'), 'dzDo', R.dz.do, 'date') + '</div></div>'
+        + '<p class="opis">' + T('Bez slike dozvole. Nove dozvole dodaješ sam u profilu.') + '</p></div>';
+      var dalje = k === 0 ? T('Pošalji kod') : k === 1 ? T('Potvrdi') : k === 5 ? T('Završi') : T('Dalje');
+      return vrh(T(K[k]), false) + '<main><div class="pekor">' + K.map(function(x, i){ return '<span class="' + (i < k ? 'got' : i === k ? 'akt' : '') + '"><b>' + (i < k ? '✓' : i + 1) + '</b>' + T(x) + '</span>'; }).join('') + '</div>' + h
+        + (R.greska ? '<p class="opis" style="color:#b91c1c">' + e_(R.greska) + '</p>' : '')
+        + '<div class="pedno"><button class="sir" data-rnazad>' + (k === 0 || k === 2 && PR.imaSesiju && PR.imaSesiju() && !R.poslanKod ? T('Odustani') : T('Natrag')) + '</button>' + (k === 5 ? '<button class="sir" data-rpreskoci>' + T('Preskoči') + '</button>' : '') + '<button class="plavi" data-rdalje' + (R.salje ? ' disabled' : '') + '>' + dalje + '</button></div></main>';
+    },
+    profil: function(){ return profil(); }
+  };
+
+  function dalje(){
+    R.greska = ''; var k = R.korak;
+    if (k === 0) { R.email = R.email.trim().toLowerCase(); if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(R.email)) { R.greska = T('Upiši ispravnu e-poštu.') ; return crtaj(); }
+      R.salje = true; crtaj();
+      return json('/api/auth/kod', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ email:R.email }) }).then(function(){ R.korak = 1; R.kod = ''; R.poslanKod = true; crtajR(); }, function(er){ R.greska = er.message; crtajR(); }); }
+    if (k === 1) { if (!/^\d{6}$/.test(R.kod.trim())) { R.greska = T('Kod ima 6 znamenki.'); return crtaj(); }
+      R.salje = true; crtaj();
+      return json('/api/auth/kod/provjeri', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ email:R.email, kod:R.kod.trim() }) }).then(function(d){
+        return Promise.resolve(PR.sesija ? PR.sesija(d) : null).catch(function(){}).then(function(){
+          if (d.imaOsobu) { R.tece = false; PROF.d = null; S.v = 'profil'; crtajR(); return; }
+          R.korak = 2; crtajR(); }); }, function(er){ R.greska = er.message; crtajR(); }); }
+    if (k === 2) { var d = R.d; d.drzava = String(d.drzava || '').toUpperCase();
+      if (!d.ime.trim() || !d.prezime.trim()) { R.greska = T('Upiši ime i prezime.'); return crtaj(); }
+      if (!d.privola) { R.greska = T('Za registraciju treba prihvatiti uvjete korištenja i privatnosti.'); return crtaj(); }
+      R.salje = true; crtaj();
+      return api('/api/me/kandidati?ime=' + encodeURIComponent(d.ime.trim()) + '&prezime=' + encodeURIComponent(d.prezime.trim())).then(function(x){ R.kandidati = x.kandidati || []; R.korak = 3; crtajR(); }, function(er){ R.greska = er.message; crtajR(); }); }
+    if (k === 3) { R.korak = 4; if (!R.klubovi) { R.salje = true; crtaj(); return json('/api/public/klubovi').then(function(x){ R.klubovi = x.klubovi || []; crtajR(); }, function(){ R.klubovi = []; crtajR(); }); } return crtaj(); }
+    if (k === 4) { if (R.klub.tip === 'ostalo' && !R.klub.ostalo.trim()) { R.greska = T('Upiši naziv kluba.'); return crtaj(); } R.korak = 5; return crtaj(); }
+    if (k === 5) return zavrsi(true);
+  }
+  function zavrsi(sDozvolom){
+    var d = R.d, b = { ime:d.ime.trim(), prezime:d.prezime.trim(), nadimak:d.nadimak, mjesto:d.mjesto, drzava:d.drzava || 'HR', datumRodjenja:d.datumRodjenja, jezik:S.jezik, privola:VERZIJA };
+    if (R.preuzmi) b.preuzmi = R.preuzmi;
+    if (R.klub.tip === 'popis' && R.klub.id) b.klub = { id:R.klub.id }; else if (R.klub.tip === 'ostalo') b.klub = { ostalo:R.klub.ostalo.trim() };
+    if (sDozvolom) b.dozvola = { vrsta:R.dz.vrsta, broj:R.dz.broj, od:R.dz.od, do:R.dz.do };
+    R.salje = true; R.greska = ''; crtaj();
+    return api('/api/me/profil', { method:'POST', body:JSON.stringify(b) }).then(function(x){
+      PROF.d = x; R.gotovo = { bgf:x.osoba && x.osoba.bgf, zahtjev:(x.zahtjevi || []).filter(function(z){ return z.stanje === 'ceka'; }).map(function(z){ return z.bgf; })[0] || null }; R.tece = false; crtajR();
+    }, function(er){ R.greska = er.message; crtajR(); });
+  }
+
+  /* ---------- moj profil ---------- */
+  function ucitajProfil(){ if (PROF.salje) return; PROF.salje = true;
+    api('/api/me/profil').then(function(d){ PROF.salje = false; PROF.d = d; PROF.greska = ''; if (S.v === 'profil') crtaj(); }, function(er){ PROF.salje = false; PROF.greska = er.message; if (S.v === 'profil') crtaj(); }); }
+  function dzTekst(x){ var V = { annual:'Godišnja', '7day':'7-dnevna', '3day':'3-dnevna', '1day':'1-dnevna' }; var f = function(s){ var p = String(s).split('-'); return +p[2] + '. ' + (+p[1]) + '. ' + p[0] + '.'; };
+    return T(V[x.kind] || x.kind) + (x.number ? ' · <span data-bezprijevoda>' + e_(x.number) + '</span>' : '') + ' · ' + f(x.valid_from) + ' – ' + f(x.valid_to); }
+  function profil(){
+    if (!PROF.d) { ucitajProfil(); return vrh(T('Moj profil'), false) + '<main><p class="opis">' + (PROF.greska ? e_(PROF.greska) : 'Učitavam…') + '</p></main>'; }
+    var d = PROF.d, o = d.osoba;
+    var dno = '<div class="info" style="margin-top:12px"><div data-jezik style="cursor:pointer"><b>🌐 Jezik / Language</b><span>' + ({ hr:'Hrvatski', en:'English', de:'Deutsch', it:'Italiano' })[S.jezik] + ' ›</span></div>'
+      + '<div data-rodjava style="cursor:pointer"><b>' + T('Odjava') + '</b><span>›</span></div></div>';
+    if (!o) return vrh(T('Moj profil'), false) + '<main><div class="mk"><p class="opis">' + T('Prijavljen si, ali još nemaš profil natjecatelja.') + '</p><button class="plavi" data-rdovrsi>' + T('Dovrši registraciju') + '</button></div>' + dno + '</main>';
+    var inic = ((o.ime || '?')[0] + (o.prezime || '')[0]).toUpperCase();
+    var h = vrh(o.ime + ' ' + o.prezime, false) + '<main><div class="mala"><span class="av">' + e_(inic) + '</span><div><b>BGF-' + o.bgf + (d.klub && d.klub.naziv ? ' · <span data-bezprijevoda>' + e_(d.klub.naziv) + '</span>' : '') + '</b><small>'
+      + (d.vazeca ? T('Dozvola') + ' · ' + T('važeća do') + ' ' + (+d.vazeca.valid_to.slice(8, 10)) + '. ' + (+d.vazeca.valid_to.slice(5, 7)) + '. ' + d.vazeca.valid_to.slice(0, 4) + '.' : T('nema važeće dozvole')) + '</small></div></div>';
+    var z = d.zahtjevi || [];
+    if (z.length) h += '<div class="odj">🗂 JESI LI OVO TI?</div><div class="info">' + z.map(function(x){ return '<div><b data-bezprijevoda>' + e_(x.ime) + ' · BGF-' + x.bgf + '</b><span>' + T(x.stanje === 'ceka' ? 'čeka potvrdu Mastera' : x.stanje === 'potvrdeno' ? 'potvrđeno' : 'odbijeno') + '</span></div>'; }).join('') + '</div>';
+    if (PROF.uredi) { var U = PROF.uredi;
+      h += '<div class="odj">👤 PODACI</div><div class="mk">' + polje(T('Nadimak (nije obavezno)'), 'pNadimak', U.nadimak) + polje(T('Datum rođenja · privatno'), 'pDatum', U.datumRodjenja, 'date') + polje(T('Mjesto'), 'pMjesto', U.mjesto) + polje(T('Država (HR, SI, IT…)'), 'pDrzava', U.drzava, 'text', ' maxlength="2"')
+        + '<p class="opis">' + T('Ime i prezime mijenja samo BGF (Master) — javi se ako treba ispravak.') + '</p><div class="pedno"><button class="sir" data-ruredi="0">' + T('Odustani') + '</button><button class="plavi" data-rspremi>' + T('Spremi') + '</button></div></div>';
+    } else h += '<div class="odj">👤 PODACI</div><div class="info"><div><b>' + T('Nadimak (nije obavezno)').replace(/ \(.*\)/, '') + '</b><span data-bezprijevoda>' + e_(o.nadimak || '—') + '</span></div><div><b>' + T('Datum rođenja · privatno') + '</b><span>' + (o.datumRodjenja ? (+o.datumRodjenja.slice(8, 10)) + '. ' + (+o.datumRodjenja.slice(5, 7)) + '. ' + o.datumRodjenja.slice(0, 4) + '.' : '—') + '</span></div><div><b>' + T('Mjesto') + '</b><span data-bezprijevoda>' + e_((o.mjesto || '—') + ' · ' + (o.drzava || 'HR')) + '</span></div><div data-ruredi="1" style="cursor:pointer"><b>' + T('Uredi') + '</b><span>›</span></div></div>';
+    h += '<div class="odj">📄 DOZVOLE</div><div class="info">' + (d.dozvole || []).map(function(x){ return '<div><b>' + dzTekst(x) + '</b><span><button class="zvono" data-rdzbrisi="' + e_(x.id) + '">' + T('Obriši') + '</button></span></div>'; }).join('') + '</div>';
+    if (PROF.novaDz) h += '<div class="mk"><div class="cipovi" style="flex-wrap:wrap">' + [['annual','Godišnja'],['7day','7-dnevna'],['3day','3-dnevna'],['1day','1-dnevna']].map(function(x){ return '<button data-rvrsta="' + x[0] + '" aria-pressed="' + (R.dz.vrsta === x[0]) + '">' + T(x[1]) + '</button>'; }).join('') + '</div>'
+      + polje(T('Broj dozvole'), 'dzBroj', R.dz.broj) + '<div style="display:flex;gap:8px"><div style="flex:1">' + polje(T('Vrijedi od'), 'dzOd', R.dz.od, 'date') + '</div><div style="flex:1">' + polje(T('do'), 'dzDo', R.dz.do, 'date') + '</div></div>'
+      + '<div class="pedno"><button class="sir" data-rnovadz="0">' + T('Odustani') + '</button><button class="plavi" data-rdzspremi>' + T('Spremi') + '</button></div></div>';
+    else h += '<button class="sir" data-rnovadz="1" style="margin-top:8px">' + T('＋ Dodaj dozvolu') + '</button>';
+    h += '<div class="odj">🏛 KLUB</div><div class="info"><div><b data-bezprijevoda>' + e_((d.klub && d.klub.naziv) || T('bez kluba')) + '</b><span>' + new Date().getFullYear() + '.</span></div></div>';
+    h += (PROF.greska ? '<p class="opis" style="color:#b91c1c">' + e_(PROF.greska) + '</p>' : '') + '<div class="info" style="margin-top:12px"><div data-josb="' + o.bgf + '" style="cursor:pointer"><b>' + T('Javni profil') + '</b><span>BGF-' + o.bgf + ' ›</span></div></div>' + dno + '</main>';
+    return h;
+  }
+  function spremiProfil(b){ PROF.greska = ''; return api('/api/me/profil', { method:'PATCH', body:JSON.stringify(b) }).then(function(d){ PROF.d = d; PROF.uredi = null; PROF.novaDz = false; crtaj(); }, function(er){ PROF.greska = er.message; crtaj(); }); }
+
+  /* ---------- unos i klikovi ---------- */
+  document.addEventListener('input', function(ev){
+    var el = ev.target, k = el.dataset && el.dataset.r; if (!k) return;
+    var v = el.type === 'checkbox' ? el.checked : el.value;
+    if (k === 'email') R.email = v; else if (k === 'kod') R.kod = String(v).replace(/\D/g, '').slice(0, 6);
+    else if (k in R.d) R.d[k] = v;
+    else if (k === 'klubId') { R.klub.tip = 'popis'; R.klub.id = v; }
+    else if (k === 'klubOstalo') R.klub.ostalo = v;
+    else if (k === 'dzBroj') R.dz.broj = v; else if (k === 'dzOd') R.dz.od = v; else if (k === 'dzDo') R.dz.do = v;
+    else if (PROF.uredi && k.charAt(0) === 'p') PROF.uredi[{ pNadimak:'nadimak', pDatum:'datumRodjenja', pMjesto:'mjesto', pDrzava:'drzava' }[k]] = v;
+  });
+  document.addEventListener('change', function(ev){ var el = ev.target;
+    if (el.dataset && el.dataset.r === 'privola') R.d.privola = el.checked;
+    if (el.dataset && el.dataset.r === 'klubId') { R.klub.tip = 'popis'; R.klub.id = el.value; }
+    if (el.dataset && el.dataset.rkand !== undefined) R.preuzmi = Number(el.dataset.rkand) || null; });
+  document.addEventListener('keydown', function(ev){ if (ev.key === 'Enter' && ev.target.dataset && ev.target.dataset.r && S.v === 'reg') { ev.preventDefault(); dalje(); } });
+  document.addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-reg],[data-rdalje],[data-rnazad],[data-rpreskoci],[data-rnovikod],[data-rklub],[data-rvrsta],[data-rprofil],[data-rdovrsi],[data-rodjava],[data-ruredi],[data-rspremi],[data-rnovadz],[data-rdzspremi],[data-rdzbrisi],#ppKod,#ppDa');
+    if (!b) return;
+    if (b.id === 'ppDa') { R.izPrijave = Date.now(); return; }   // prijava lozinkom → nakon nje Moj profil
+    ev.stopPropagation(); ev.preventDefault();
+    if (b.id === 'ppKod') { var em = (document.getElementById('ppEmail') || {}).value || ''; PR.zatvoriPrijavu && PR.zatvoriPrijavu(); REG.pocni('prijava', em.trim()); return; }
+    if (b.hasAttribute('data-reg')) { REG.pocni('reg'); return; }
+    if (b.hasAttribute('data-rdalje')) { if (!R.salje) dalje(); return; }
+    if (b.hasAttribute('data-rpreskoci')) { if (!R.salje) zavrsi(false); return; }
+    if (b.hasAttribute('data-rnovikod')) { R.korak = 0; dalje(); return; }
+    if (b.hasAttribute('data-rnazad')) { R.greska = '';
+      if (R.korak === 0 || (R.korak === 2 && !R.poslanKod)) { R.tece = false; S.v = (PR.imaSesiju && PR.imaSesiju()) ? 'profil' : 'pocetna'; window.scrollTo(0, 0); crtaj(); return; }
+      R.korak = R.korak === 2 ? 0 : R.korak - 1; crtaj(); return; }
+    if (b.dataset.rklub) { R.klub.tip = R.klub.tip === b.dataset.rklub ? 'popis' : b.dataset.rklub; crtaj(); return; }
+    if (b.dataset.rvrsta) { R.dz.vrsta = b.dataset.rvrsta; zadanaDozvola(R.dz.vrsta); crtaj(); return; }
+    if (b.hasAttribute('data-rprofil')) { R.gotovo = null; S.v = 'profil'; window.scrollTo(0, 0); crtaj(); return; }
+    if (b.hasAttribute('data-rdovrsi')) { REG.pocni('reg'); return; }
+    if (b.hasAttribute('data-rodjava')) { PR.odjavaSve && PR.odjavaSve(); PROF.d = null; S.v = 'pocetna'; crtaj(); return; }
+    if (b.dataset.ruredi) { var o = PROF.d && PROF.d.osoba; PROF.uredi = b.dataset.ruredi === '1' && o ? { nadimak:o.nadimak || '', datumRodjenja:o.datumRodjenja || '', mjesto:o.mjesto || '', drzava:o.drzava || 'HR' } : null; crtaj(); return; }
+    if (b.hasAttribute('data-rspremi')) { spremiProfil(PROF.uredi); return; }
+    if (b.dataset.rnovadz) { PROF.novaDz = b.dataset.rnovadz === '1'; if (PROF.novaDz) { R.dz = { vrsta:'annual', broj:'', od:'', do:'' }; zadanaDozvola('annual'); } crtaj(); return; }
+    if (b.hasAttribute('data-rdzspremi')) { spremiProfil({ dozvola:{ vrsta:R.dz.vrsta, broj:R.dz.broj, od:R.dz.od, do:R.dz.do } }); return; }
+    if (b.dataset.rdzbrisi) { spremiProfil({ dozvolaObrisi:b.dataset.rdzbrisi }); return; }
+  }, true);
+
+  /* prijava lozinkom: dodaj „Pošalji mi kod na e-poštu” */
+  var ppNe = document.getElementById('ppNe');
+  if (ppNe && !document.getElementById('ppKod')) { var bk = document.createElement('button'); bk.className = 'sir'; bk.id = 'ppKod'; bk.style.marginTop = '8px'; bk.textContent = T('Pošalji mi kod na e-poštu'); ppNe.parentNode.insertBefore(bk, ppNe);
+    var ob = PR.otvoriPrijavu; }
+  document.addEventListener('click', function(ev){ if (ev.target.closest('[data-prijava]')) setTimeout(function(){ var bk = document.getElementById('ppKod'); if (bk) bk.textContent = T('Pošalji mi kod na e-poštu'); }, 0); });
+  NOVO['Upiši ispravnu e-poštu.'] = ['Enter a valid e-mail.','Gültige E-Mail eingeben.','Inserisci un’e-mail valida.'];
+  NOVO['Kod ima 6 znamenki.'] = ['The code has 6 digits.','Der Code hat 6 Ziffern.','Il codice ha 6 cifre.'];
+  NOVO['Upiši ime i prezime.'] = ['Enter first and last name.','Vor- und Nachnamen eingeben.','Inserisci nome e cognome.'];
+  NOVO['Upiši naziv kluba.'] = ['Enter the club name.','Vereinsnamen eingeben.','Inserisci il nome del club.'];
+  NOVO['Za registraciju treba prihvatiti uvjete korištenja i privatnosti.'] = ['To register you must accept the terms of use and privacy policy.','Für die Registrierung musst du die Nutzungs- und Datenschutzbedingungen akzeptieren.','Per registrarti devi accettare i termini d’uso e la privacy.'];
+  NOVO['E-pošta'] = ['E-mail','E-Mail','E-mail']; NOVO['Vrsta'] = ['Type','Art','Tipo'];
+})();
+var REG;
 </script>
 
 </body>
