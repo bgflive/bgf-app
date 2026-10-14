@@ -485,7 +485,7 @@ body.tmmod .uz{color:#0456E8!important}
 .kkoraci span.cek{background:#fef3c7;color:#92400e}
 .info .brzo, main > .brzo{margin:0 0 12px}
 /* 505 · oznaka verzije (da se vidi koja je verzija na mobitelu) */
-body::after{content:'v546';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
+body::after{content:'v547';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
 /* 515 · stanje ribe bojom ruba (Nikola 13.10.) */
 .ulov.rub-zeleno{border-left:5px solid #16a34a;border-radius:0 12px 12px 0}
 .ulov.rub-plavo{border-left:5px solid #2563eb;border-radius:0 12px 12px 0}
@@ -778,7 +778,7 @@ const P = {
         ${t.st !== 'zavrsen' && !JV() ? `<button class="pogodi" data-pogodi><span>🎯</span><div><b>Pogodi pobjednika</b><small>${POGODAK ? 'tvoj izbor: ' + POGODAK : 'bez uplata · nagrada sponzora'}</small></div><i>›</i></button>` : ''}
         ${t.st === 'zavrsen' ? `<div class="noga" style="margin:12px 0 6px;gap:8px;justify-content:flex-start"><button class="zvono" data-dijeli="${t.id}">↗ Podijeli</button></div>` : `<div class="noga" style="margin:12px 0 6px;gap:8px;justify-content:flex-start;flex-wrap:wrap"><button class="prati ${S.prati.has(t.id) ? 'on' : ''}" style="${S.prati.has(t.id) ? '' : 'background:' + B}" data-prati="${t.id}">${S.prati.has(t.id) ? '✓ Pratiš' : '＋ Prati'}</button><button class="zvono ${S.obav.has(t.id) ? 'on' : ''}" data-obav="${t.id}">${S.obav.has(t.id) ? '🔔 Obavijesti uključene' : '🔕 Obavijesti'}</button><button class="zvono" data-dijeli="${t.id}">↗ Podijeli</button></div>`}
         ${S.obav.has(t.id) && t.st !== 'zavrsen' ? `<p class="opis">Dobivaš obavijest na mobitel: ulov, novo vodstvo, kraj dana. Dodir na obavijest otvara board uživo.</p>` : ''}
-        <div class="brojke"><div data-ttab="ekipe"><b class="sport" style="color:${B}">${t.ek || '—'}</b><small>ekipa</small></div><div><b class="sport" style="color:${B}">${t.ek ? t.ek * 4 : '—'}</b><small>natjecatelja</small></div><div data-ttab="ulovi"><b class="sport" style="color:${B}">${t.ul ?? 0}</b><small>ulova</small></div><div><b class="sport" style="color:${B}">${t.kac ?? (t.ul ? Math.round(t.ul * 1.2) : 0)}</b><small>${t.st === 'uzivo' ? 'na štapu sada' : 'kačenja'}</small></div></div>
+        <div class="brojke"><div data-ttab="ekipe"><b class="sport" style="color:${B}">${t.ek || '—'}</b><small>ekipa</small></div><div><b class="sport" style="color:${B}">${JV() && t.pravi ? JAVNO.broj(t, 'natj') : t.ek ? t.ek * 4 : '—'}</b><small>natjecatelja</small></div><div data-ttab="ulovi"><b class="sport" style="color:${B}">${t.ul ?? 0}</b><small>ulova</small></div><div><b class="sport" style="color:${B}">${JV() && t.pravi ? JAVNO.broj(t, 'kac') : t.kac ?? (t.ul ? Math.round(t.ul * 1.2) : 0)}</b><small>${t.st === 'uzivo' ? 'na štapu sada' : 'kačenja'}</small></div></div>
         <div class="odj">🔗 POVEZNICE</div>
         ${(t.st === 'zavrsen'
           ? [['🏆','Rezultati','po danima i konačni (PDF)'],['📄','Propozicije','PDF'],['🗺','Karta ulova i zone','pozicije kačenja · GPX']]
@@ -786,7 +786,7 @@ const P = {
           ? [['🔑','Moja ekipa','samo za prijavljene natjecatelje ovog turnira → turnirski način','tm'],['📄','Propozicije','PDF · verzija 2'],['🗺','Karta zone i GPX','za plotere i karte'],['🏆','Rezultati','po danima (PDF)']]
           : [['📝','Prijava ekipe',t.prij ? 'prijave otvorene do ' + t.prij.split('– ')[1] : 'prijave otvorene','pe'],['🔑','Moja ekipa','samo za prijavljene natjecatelje ovog turnira'],['📄','Propozicije','PDF · verzija 2'],['🗺','Karta zone i GPX','za plotere i karte']]
         ).map(r => `<button class="pov" ${r[3] === 'tm' ? 'data-tm' : r[3] === 'pe' ? 'data-pe' : ''}><span class="ik">${r[0]}</span><div><b>${r[1]}</b><small>${r[2]}</small></div><span class="s">→</span></button>`).join('')}
-        ${JV() ? '' : `<div class="odj">🐟 ULOVI PO VRSTAMA</div><p class="opis">Dodirni vrstu za rekorde i podatke o vrsti.</p>
+        ${JV() ? JAVNO.pregledDod(t) : `<div class="odj">🐟 ULOVI PO VRSTAMA</div><p class="opis">Dodirni vrstu za rekorde i podatke o vrsti.</p>
         ${VRSTE.map(v => `<div class="vrsta"><div><b>${v[0]}</b><i>${v[1]}</i></div><span class="n">${t.st === 'prijave' ? 0 : v[2]}</span><span style="color:${B};font-size:20px">→</span></div>`).join('')}
         <div class="graf" style="margin-top:12px"><svg viewBox="0 0 320 170">${VRSTE.slice(0, 4).map((v, i) => { const h = v[2] * 30; return `<rect x="${24 + i * 74}" y="${140 - h}" width="44" height="${h}" rx="10" fill="${B}"/><text x="${46 + i * 74}" y="${134 - h}" text-anchor="middle" font-size="12" font-weight="800" fill="#1f2b3a">${v[2]}</text><text x="${46 + i * 74}" y="158" text-anchor="middle" font-size="11" fill="#5f6f86">${v[0].split(' ').pop()}</text>`; }).join('')}<line x1="14" y1="140" x2="310" y2="140" stroke="#cfd6e0"/></svg></div>
         <div class="odj">🗓 ULOVI PO DANIMA</div><p class="opis">Turnir traje 3 dana. Prosječno ${t.st === 'uzivo' ? '3,5' : '—'} ulova po danu.</p>
@@ -814,7 +814,7 @@ const P = {
         <div class="ljudi">${e.cl.map(c => `<span class="av">${c[2]}</span>`).join('')}</div>
         <small><b>${e.cl[0][1]}</b> (kapetan) · ${e.cl.slice(1).map(c => c[1]).join(', ')}</small><br><small>🎣 ${e.kac} kačenja · ✓ ${e.ul + e.pu} ulova</small></button>`).join('')}</main>`,
     };
-    return hdr + (JV() && t.pravi && S.ttab !== 'pregled' ? JAVNO.privremeno(t) : sad[S.ttab]); },
+    return hdr + (JV() && t.pravi && S.ttab !== 'pregled' ? JAVNO.tab(t, S.ttab) : sad[S.ttab]); },
 
   ekipa: () => `<header class="vrh"><div class="red1"><button class="avatar" data-natrag-t aria-label="Natrag">‹</button><img src="${SL.logo}" alt="BGF.LIVE"><span style="width:44px"></span></div><div class="naslovV">${S.ek}</div><p style="margin:2px 0 0;color:#cfe0ff">Dubrovnik · prvi nastup 2012.</p></header>
     <main><div class="brojke"><div><b>41</b><small>turnir</small></div><div><b>58</b><small>ulova</small></div><div><b>17</b><small>ljudi</small></div><div><b>7× 1.</b><small>pobjeda</small></div></div>
@@ -1219,6 +1219,7 @@ const zauzet = (r, osim) => TM.otvorena.some((o, j) => j !== osim && o.rib === r
 function listHtml(){
   if (!LIST) return '';
   const B = BOJA[S.t] || '#071A2D';
+  if (LIST.k === 'jek' && window.JAVNO && JAVNO.listEkipa) return JAVNO.listEkipa(LIST.id);   // 547: prava ekipa
   if (LIST.k === 'jezik') return `<div class="rucka"></div><b style="font-size:21px">Jezik · Language · Sprache · Lingua</b><div class="mjlista" style="margin-top:8px">${[['hr','🇭🇷','Hrvatski'],['en','🇬🇧','English'],['de','🇩🇪','Deutsch'],['it','🇮🇹','Italiano']].map(([k, z, n]) => `<button data-jz="${k}">${z} <b>${n}</b><small>${S.jezik === k ? '✓' : ''}</small></button>`).join('')}</div>`;
   if (LIST.k === 'tv') return `<div class="rucka"></div><b style="font-size:20px">📺 Board preko cijelog ekrana</b><p class="opis">Okreni mobitel položeno — otvara se isti board kao na TV-u (felun2027.bgf.live): poredak, kačenja, video, sponzori. Može se poslati i na televizor (Chromecast / AirPlay).</p><div style="aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#071A2D;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:4px;padding:6px"><div style="background:#0c2440;border-radius:6px"></div><div style="background:#0b1f3a;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#9fb3cf;font-size:11px">video</div><div style="background:#0c2440;border-radius:6px"></div></div><button class="plavi" style="margin-top:12px">Otvori board</button>`;
   if (LIST.k === 'dijeli') return `<div class="rucka"></div><b style="font-size:20px">↗ Podijeli</b><p class="opis">Poveznica vodi na board turnira — tamo su poredak, svi događaji i sponzori. Tko ima aplikaciju, otvara mu se turnir u aplikaciji.</p><div class="info"><div><b>${BOARD[LIST.i]}.bgf.live</b><span>kopiraj</span></div></div><div class="lbgumbi" style="margin-top:10px">${['WhatsApp','Facebook','Instagram','Viber'].map(x => `<button style="background:#071A2D">${x}</button>`).join('')}</div>`;
@@ -3034,6 +3035,258 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
   ucitaj();
   setInterval(function(){ if (!document.hidden && javniEkran()) ucitaj(); }, 60000);
   document.addEventListener('visibilitychange', function(){ if (!document.hidden && javniEkran()) ucitaj(); });
+})();
+</script>
+
+<script>
+/* ===== 547 · JAVNI DIO — stranica turnira na pravim podacima =====
+   Izvor: GET /api/public/<poddomena>/leaderboard (isti kao board i Poredak u
+   turnirskom načinu). Uživo, Poredak, Ekipe (+ list ekipe), Tijek, Karta i
+   brojke Pregleda. Osvježava se svakih 20 s dok je turnir otvoren. Bez
+   telefona i brojeva dozvola (ne prikazuju se nigdje u javnom dijelu). */
+(function(){
+  'use strict';
+  var J = window.JAVNO; if (!J) return;
+  var PR = window.PRAVO || {};
+  var BACKEND = PR.BACKEND || 'https://bgf-live-backend.vercel.app';
+  var e_ = PR.e || function(x){ return String(x == null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  var vrstaT = function(n){ return (PR.vrstaT ? PR.vrstaT(n) : n) || ''; };
+  var LB = {}, salje = {}, porDan = 'uk', KLJ = 'bgf-javno-lb';
+
+  var NOVO = {
+    'Učitavam…':['Loading…','Wird geladen…','Caricamento…'],
+    'Podaci turnira još nisu dostupni.':['Tournament data is not available yet.','Turnierdaten sind noch nicht verfügbar.','Dati del torneo non ancora disponibili.'],
+    'Poredak još nije dostupan.':['Standings not available yet.','Rangliste noch nicht verfügbar.','Classifica non ancora disponibile.'],
+    'Nema riba na štapu.':['No fish on the line.','Kein Fisch am Haken.','Nessun pesce in canna.'],
+    'Još nema događaja.':['No events yet.','Noch keine Ereignisse.','Ancora nessun evento.'],
+    'Još nema ekipa.':['No teams yet.','Noch keine Teams.','Ancora nessuna squadra.'],
+    'Još nema ulova.':['No catches yet.','Noch keine Fänge.','Ancora nessuna cattura.'],
+    'Plasmansko bodovanje — manje je bolje.':['Placement scoring — lower is better.','Platzierungswertung — weniger ist besser.','Punteggio di piazzamento — meno è meglio.'],
+    'čeka suca':['awaiting judge','wartet auf Richter','in attesa del giudice'],
+    'nije priznato':['not accepted','nicht anerkannt','non accettato'],
+    'ispod mjere':['undersized','untermaßig','sotto misura'],
+    'diskvalificirana':['disqualified','disqualifiziert','squalificata'],
+    'kapetan':['captain','Kapitän','capitano'],
+    '🎣 ULOVI EKIPE':['🎣 TEAM CATCHES','🎣 FÄNGE DES TEAMS','🎣 CATTURE DELLA SQUADRA'],
+    '⚓ POSADA':['⚓ CREW','⚓ CREW','⚓ EQUIPAGGIO'],
+    '🗓 ULOVI PO DANIMA':['🗓 CATCHES BY DAY','🗓 FÄNGE NACH TAGEN','🗓 CATTURE PER GIORNO'],
+    '🐟 ULOVI PO VRSTAMA':['🐟 CATCHES BY SPECIES','🐟 FÄNGE NACH ARTEN','🐟 CATTURE PER SPECIE'],
+    '🕘 SATNICA':['🕘 SCHEDULE','🕘 ZEITPLAN','🕘 ORARIO'],
+    'Pozicije ulova javne su nakon zaključanog dana.':['Catch positions become public after the day is locked.','Fangpositionen werden nach dem Abschluss des Tages öffentlich.','Le posizioni delle catture sono pubbliche dopo la chiusura della giornata.'],
+    'Zona još nije objavljena.':['The zone has not been published yet.','Die Zone ist noch nicht veröffentlicht.','La zona non è ancora pubblicata.'],
+    'zona':['zone','Zone','zona'], 'ulov':['catch','Fang','cattura'],
+    'Najveća riba':['Biggest fish','Größter Fisch','Pesce più grande'],
+    '📡 Bez signala — prikaz od':['📡 No signal — showing data from','📡 Kein Signal — Stand von','📡 Nessun segnale — dati delle']
+  };
+  Object.keys(NOVO).forEach(function(k){ RJ[k] = NOVO[k]; });
+  KLJUCEVI.length = 0; Object.keys(RJ).sort(function(a, b){ return b.length - a.length; }).forEach(function(k){ KLJUCEVI.push(k); });
+  RX.push(['^NA ŠTAPU SADA \\((\\d+)\\)$', ['ON THE LINE NOW ($1)','JETZT AM HAKEN ($1)','IN CANNA ORA ($1)']]);
+  RX.push(['^👥 EKIPE \\((\\d+)\\)$', ['👥 TEAMS ($1)','👥 TEAMS ($1)','👥 SQUADRE ($1)']]);
+
+  /* ---------- učitavanje ---------- */
+  try{ var z = JSON.parse(localStorage.getItem(KLJ) || 'null'); if (z && z.sub && z.d) LB[z.sub] = { d:z.d, kada:z.kada, bezVeze:true }; }catch(er){}
+  function ucitaj(sub){
+    if (!sub || salje[sub]) return; salje[sub] = true; LB[sub] = LB[sub] || {}; LB[sub].zadnji = Date.now();
+    fetch(BACKEND + '/api/public/' + encodeURIComponent(sub) + '/leaderboard', { cache:'no-store' })
+      .then(function(r){ if (!r.ok) throw Object.assign(new Error('HTTP ' + r.status), { status:r.status }); return r.json(); })
+      .then(function(d){ salje[sub] = false; LB[sub] = { d:d, kada:Date.now(), zadnji:Date.now() };
+        try{ localStorage.setItem(KLJ, JSON.stringify({ sub:sub, d:d, kada:Date.now() })); }catch(er){}
+        if (S.v === 'turnir' && S.t === sub && !LIST) crtaj(); })
+      .catch(function(er){ salje[sub] = false; var x = LB[sub], prije = !!(x.bezVeze || x.greska);
+        if (x.d) x.bezVeze = true; else { x.greska = true; x.status = er.status; }
+        if (!prije && S.v === 'turnir' && S.t === sub && !LIST) crtaj(); });
+  }
+  setInterval(function(){ if (!document.hidden && S.v === 'turnir' && S.t) { var t = TURNIRI.find(function(x){ return x.id === S.t; }); if (t && t.pravi && t.st !== 'zavrsen') ucitaj(S.t); } }, 20000);
+  function lb(t){ var x = LB[t.id];
+    var treba = !x || (!x.zadnji || Date.now() - x.zadnji > 20000) && (!x.d || t.st !== 'zavrsen' || x.bezVeze);
+    if (treba && !salje[t.id]) ucitaj(t.id);
+    return x && x.d ? x.d : null; }
+
+  /* ---------- pomoćno ---------- */
+  function broj(x){ var n = Number(x) || 0; return n.toLocaleString(S.jezik === 'en' ? 'en' : S.jezik === 'de' ? 'de' : S.jezik === 'it' ? 'it' : 'hr', { maximumFractionDigits:2 }); }
+  function inic(ime){ var p = String(ime || '').trim().split(/\s+/); return ((p[0] || '?')[0] + ((p[1] || '')[0] || '')).toUpperCase(); }
+  function tip(c){ return c.kind === 'hooked' ? 'kac' : c.outcome === 'released' ? 'pust' : c.outcome === 'boated' ? 'brod' : c.outcome === 'lost' ? 'otp' : 'otp'; }
+  var RIJEC = { kac:'Kačenje', pust:'Pušteno', brod:'Na brodu', otp:'Otpalo' };
+  function opis(c){
+    var k = tip(c), dij = [];
+    if (c.kind === 'hooked') dij.push('<span>' + RIJEC.kac + '</span>');
+    else {
+      if (c.outcome !== 'lost') dij.push('<span>' + e_(vrstaT(c.species)) + '</span>');
+      if (c.weightKg) dij.push('<span>' + broj(c.weightKg) + ' kg</span>');
+      dij.push('<span>' + (c.outcome === 'disq' ? 'nije priznato' : RIJEC[k]) + '</span>');
+      if (c.status === 'pending') dij.push('<span>čeka suca</span>');
+      else if (c.status === 'not_scored' && c.outcome !== 'lost') dij.push('<span>ispod mjere</span>');
+    }
+    return dij.join(' · ') + (c.angler ? ' — <span data-bezprijevoda>' + e_(c.angler) + '</span>' : '');
+  }
+  function redakDog(c){
+    return '<button class="ulov"><span class="v">' + e_(c.time || '') + '<small>Dan ' + e_(c.day || '') + '</small></span>' + bico(tip(c))
+      + '<div><b><span data-bezprijevoda>' + e_(c.teamName) + '</span> <span class="nbr">#' + e_(c.compNumber) + '</span>' + (c.points > 0 ? ' <span class="nbr">+' + broj(c.points) + '</span>' : '') + '</b><span>' + opis(c) + '</span></div></button>';
+  }
+  function cekaj(t){
+    var x = LB[t.id];
+    if (x && x.greska) return '<main><p class="opis">Podaci turnira još nisu dostupni.</p>' + J.privremeno(t).replace(/^<main[^>]*>|<\/main>$/g, '') + '</main>';
+    return '<main><p class="opis">Učitavam…</p></main>';
+  }
+  function bezVeze(t){ var x = LB[t.id]; if (!x || !x.bezVeze || !x.kada) return ''; var d = new Date(x.kada); return '<div class="offline">📡 Bez signala — prikaz od ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + '</div>'; }
+  function poredak(L, dan){
+    var Tt = L.tournament || {}, plas = Tt.rankingMode === 'placement', lbE = (L.leaderboard || []).slice();
+    if (dan === 'uk') return lbE.map(function(e, i){ return { e:e, mj: plas ? (e.placeTotal != null ? e.placeTotal : (e.disqualified ? '—' : i + 1)) : (e.disqualified ? '—' : i + 1),
+      bod: e.disqualified ? 'DSQ' : plas ? (e.placementPoints != null ? broj(e.placementPoints) : '—') : broj(e.points) }; });
+    var dn = Number(dan);
+    if (plas) return lbE.filter(function(e){ return !e.disqualified; }).map(function(e){ var x = (e.days || {})[dn] || {}; return { e:e, mj:x.rank != null ? x.rank : '—', bod:x.pb != null ? broj(x.pb) : '—', bpv:x.bpv, s:x.rank != null ? x.rank : 999 }; }).sort(function(a, b){ return a.s - b.s; });
+    var zb = {}; (L.catches || []).forEach(function(c){ if (c.day === dn) zb[c.teamId] = (zb[c.teamId] || 0) + (Number(c.points) || 0); });
+    return lbE.filter(function(e){ return !e.disqualified; }).map(function(e){ return { e:e, b:zb[e.teamId] || 0 }; }).sort(function(a, b){ return b.b - a.b || a.e.compNumber - b.e.compNumber; }).map(function(r, i){ return { e:r.e, mj:i + 1, bod:broj(r.b) }; });
+  }
+  function redakPor(r, i){
+    var sitno = (r.e.catches || 0) + ' ulova' + (r.bpv != null ? ' · BpV ' + broj(r.bpv) : '') + (r.e.disqualified ? ' · diskvalificirana' : '');
+    return '<button class="redak ' + (i ? '' : 'prvi') + '" data-jek="' + e_(r.e.teamId) + '"><span class="mj sport">' + e_(r.mj) + '</span><div style="min-width:0"><b data-bezprijevoda>' + e_(r.e.name) + ' <span class="nbr">#' + e_(r.e.compNumber) + '</span></b><small>' + sitno + '</small></div><span class="bod sport">' + e_(r.bod) + '</span></button>';
+  }
+  function naStapu(L){ return (L.feed || []).filter(function(f){ return f.kind === 'hooked' && !f.resolved; }); }
+  function sekOd(hhmm){ var p = String(hhmm || '').split(':'); if (p.length < 2) return 0; var d = new Date(); var s = (d.getHours() * 60 + d.getMinutes()) * 60 + d.getSeconds() - (+p[0] * 60 + +p[1]) * 60; return s >= 0 ? s : s + 86400; }
+  function mmss(n){ return String(Math.floor(n / 60)).padStart(2,'0') + ':' + String(n % 60).padStart(2,'0'); }
+  function dogadaji(L){ return (L.feed || []).filter(function(f){ return f.kind === 'catch' || (f.kind === 'hooked' && !f.resolved); }); }
+
+  /* ---------- brojke Pregleda ---------- */
+  J.broj = function(t, k){
+    var L = lb(t); if (!L) return '—';
+    if (k === 'natj') return (L.teams || []).reduce(function(a, e){ return a + ((e.anglers || []).length); }, 0) || '—';
+    if (k === 'kac') return t.st === 'uzivo' ? naStapu(L).length : ((L.stats || {}).hookedSNaknadnima || (L.stats || {}).hooked || 0);
+    return '—';
+  };
+  J.pregledDod = function(t){
+    var L = lb(t); if (!L) return '';
+    var B = BOJA[t.id] || '#0456E8', h = '';
+    var po = {}; (L.catches || []).forEach(function(c){ if (c.outcome === 'lost' || c.outcome === 'disq') return; var k = c.species || 'Riba'; po[k] = (po[k] || 0) + 1; });
+    var vr = Object.keys(po).sort(function(a, b){ return po[b] - po[a]; });
+    var LAT = {}; (typeof VRSTE !== 'undefined' ? VRSTE : []).forEach(function(v){ LAT[String(v[0]).toLowerCase()] = v[1]; });
+    h += '<div class="odj">🐟 ULOVI PO VRSTAMA</div>';
+    h += vr.length ? vr.map(function(k){ return '<div class="vrsta"><div><b>' + e_(vrstaT(k)) + '</b><i>' + e_(LAT[k.toLowerCase()] || '') + '</i></div><span class="n">' + po[k] + '</span></div>'; }).join('') : '<p class="opis">Još nema ulova.</p>';
+    var big = (L.stats || {}).biggest;
+    if (big && big.weightKg) h += '<div class="vrsta"><div><b>Najveća riba</b><i data-bezprijevoda>' + e_(vrstaT(big.species)) + ' · ' + e_(big.teamName || '') + '</i></div><span class="n">' + broj(big.weightKg) + ' kg</span></div>';
+    var sd = L.statsByDay || [];
+    if (sd.length > 1){
+      var max = Math.max.apply(null, sd.map(function(d){ return d.totalCatches || 0; }).concat([1]));
+      h += '<div class="odj">🗓 ULOVI PO DANIMA</div><div class="graf"><svg viewBox="0 0 320 150">' + sd.map(function(d, i){ var w = 280 / sd.length, x = 24 + i * w, hh = Math.round((d.totalCatches || 0) / max * 100);
+        return '<rect x="' + (x + w * .2) + '" y="' + (120 - hh) + '" width="' + (w * .6) + '" height="' + hh + '" rx="8" fill="' + B + '"/><text x="' + (x + w / 2) + '" y="' + (114 - hh) + '" text-anchor="middle" font-size="12" font-weight="800" fill="#1f2b3a">' + (d.totalCatches || 0) + '</text><text x="' + (x + w / 2) + '" y="140" text-anchor="middle" font-size="11" fill="#5f6f86">Dan ' + d.day + '</text>'; }).join('') + '</svg></div>';
+    }
+    var hs = L.hours || [];
+    if (hs.length) h += '<div class="odj">🕘 SATNICA</div><div class="podaci">' + hs.map(function(x){ var dd = ((L.tournament || {}).dayDates || [])[x.day - 1]; var dt = dd ? (+dd.slice(8, 10)) + '. ' + (+dd.slice(5, 7)) + '.' : ''; return '<b>Dan ' + x.day + '</b><span>' + e_(dt) + ' · ' + e_(x.start) + '–' + e_(x.end) + '</span>'; }).join('') + '</div>';
+    return h;
+  };
+
+  /* ---------- kartice ---------- */
+  J.tab = function(t, tab){
+    var L = lb(t); if (!L) return cekaj(t);
+    var B = BOJA[t.id] || '#0456E8', Tt = L.tournament || {}, h = bezVeze(t);
+    if (tab === 'uzivo'){
+      var st = naStapu(L);
+      h += '<div class="lbtv"><a class="tv" href="https://' + e_(t.id) + '.bgf.live" target="_blank" rel="noopener">📺 Gledaj uživo na boardu</a><small>' + e_(t.id) + '.bgf.live</small></div>';
+      h += '<div class="odj"><span class="tocka"></span>NA ŠTAPU SADA (' + st.length + ')</div>';
+      h += st.length ? st.map(function(f){ var s = sekOd(f.time); return '<div class="stap">' + bico('kac') + '<div><b data-bezprijevoda>' + e_(f.teamName) + ' <span class="nbr">#' + e_(f.compNumber) + '</span></b><small data-bezprijevoda>' + (f.angler ? e_(f.angler) + ' · ' : '') + '🎣 ' + e_(f.time) + '</small></div><span class="sat sport" data-borba="' + s + '">' + mmss(s) + '</span></div>'; }).join('') : '<p class="opis">Nema riba na štapu.</p>';
+      var por = poredak(L, 'uk');
+      h += '<div class="odj">🏆 POREDAK UŽIVO</div>' + (por.length ? por.slice(0, 5).map(redakPor).join('') + '<button class="sir" style="margin-top:8px" data-ttab="poredak">Cijeli poredak →</button>' : '<p class="opis">Poredak još nije dostupan.</p>');
+      var dg = dogadaji(L).filter(function(f){ return f.kind === 'catch'; });
+      h += '<div class="odj">⏱ ZADNJE</div>' + (dg.length ? dg.slice(0, 5).map(redakDog).join('') + '<button class="sir" style="margin-top:8px" data-ttab="ulovi">Cijeli tijek turnira →</button>' : '<p class="opis">Još nema događaja.</p>');
+      var sp = L.sponsors || [];
+      if (sp.length) h += '<div class="sponz" data-bezprijevoda>' + sp.map(function(x){ return '<span>' + e_(x.name) + '</span>'; }).join('') + '</div>';
+      return '<main style="--tb:' + B + ';padding-top:12px">' + bodZnak(t) + h + '</main>';
+    }
+    if (tab === 'poredak'){
+      var dani = Number(Tt.days) || 0, zak = Tt.lockedDays || [], tek = Number(Tt.currentDay) || dani;
+      var cip = [['uk','Ukupno']]; for (var d = 1; d <= Math.min(dani, Math.max(tek, 1)); d++) cip.push([String(d), 'Dan ' + d + (zak.indexOf(d) >= 0 ? ' 🔒' : '')]);
+      if (!cip.some(function(c){ return c[0] === porDan; })) porDan = 'uk';
+      var red = poredak(L, porDan);
+      h += '<div class="cipovi" style="margin-bottom:8px">' + cip.map(function(c){ return '<button data-jpor="' + c[0] + '" aria-pressed="' + (c[0] === porDan) + '">' + c[1] + '</button>'; }).join('') + '</div>';
+      h += red.length ? red.map(redakPor).join('') : '<p class="opis">Poredak još nije dostupan.</p>';
+      if (Tt.rankingMode === 'placement') h += '<p class="opis" style="margin-top:10px">Plasmansko bodovanje — manje je bolje.</p>';
+      return '<main style="--tb:' + B + '">' + h + '</main>';
+    }
+    if (tab === 'ekipe'){
+      var por2 = {}; (L.leaderboard || []).forEach(function(e){ por2[e.teamId] = e; });
+      var kac = {}, rib = {}; (L.feed || []).forEach(function(f){ if (f.kind === 'hooked') kac[f.teamId] = (kac[f.teamId] || 0) + 1; });
+      (L.catches || []).forEach(function(c){ rib[c.teamId] = (rib[c.teamId] || 0) + 1; });
+      Object.keys(rib).forEach(function(k){ kac[k] = Math.max(kac[k] || 0, rib[k]); });   // ulov bez kačenja (upisao sudac) je i kačenje
+      var ek = (L.teams || []).filter(function(e){ return e.compNumber != null; }).sort(function(a, b){ return a.compNumber - b.compNumber; });
+      h += '<div class="odj">👥 EKIPE (' + ek.length + ')</div>';
+      h += ek.length ? ek.map(function(e){ var cl = e.anglers || [];
+        return '<button class="ekk2" data-jek="' + e_(e.teamId) + '"><div class="gore"><b data-bezprijevoda>' + e_(e.name) + '</b><i>#' + e_(e.compNumber) + '</i><span class="str2">→</span></div>'
+          + '<div class="ljudi">' + cl.map(function(c){ return '<span class="av">' + e_(inic(c.name)) + '</span>'; }).join('') + '</div>'
+          + (e.captain || cl.length ? '<small data-bezprijevoda>' + (e.captain ? '<b>' + e_(e.captain) + '</b> · ' : '') + cl.filter(function(c){ return c.name !== e.captain; }).map(function(c){ return e_(c.name); }).join(', ') + '</small><br>' : '')
+          + '<small>🎣 ' + (kac[e.teamId] || 0) + ' kačenja · ✓ ' + ((por2[e.teamId] || {}).catches || 0) + ' ulova</small></button>'; }).join('') : '<p class="opis">Još nema ekipa.</p>';
+      return '<main style="--tb:' + B + '">' + h + '</main>';
+    }
+    if (tab === 'ulovi'){
+      var dn2 = Number(Tt.days) || 0, dd = Tt.dayDates || [];
+      var fmt = function(i){ var x = dd[i - 1]; return x ? (+x.slice(8, 10)) + '. ' + (+x.slice(5, 7)) + '.' : ''; };
+      if (S.dan > dn2) S.dan = 0;
+      h += '<div class="dani">' + [[0, 'Svi dani', dn2 > 1 ? fmt(1) + ' – ' + fmt(dn2) : fmt(1)]].concat(Array.from({ length:dn2 }, function(_, i){ return [i + 1, 'Dan ' + (i + 1), fmt(i + 1)]; }))
+        .map(function(x){ return '<button data-dan="' + x[0] + '" aria-pressed="' + (S.dan === x[0]) + '"><b>' + x[1] + '</b><small>' + e_(x[2]) + '</small></button>'; }).join('') + '</div>';
+      h += '<div class="blegenda">' + [['kac','Kačenje'],['pust','Pušteno'],['brod','Na brodu'],['otp','Otpalo']].map(function(x){ return '<span>' + bico(x[0]) + x[1] + '</span>'; }).join('') + '</div>';
+      var sv = dogadaji(L), ima = false;
+      for (var d2 = dn2; d2 >= 1; d2--){
+        if (S.dan && S.dan !== d2) continue;
+        var u = sv.filter(function(f){ return f.day === d2; }).sort(function(a, b){ return String(b.time).localeCompare(String(a.time)); });
+        var sluz = (Tt.lockedAt || {})[d2];
+        if (!u.length && !sluz) continue; ima = true;
+        h += '<div class="danbanner"><b>DAN ' + d2 + '</b>' + e_(fmt(d2)) + '</div>';
+        if (sluz) h += '<div class="ulov"><span class="v">' + e_(new Date(sluz).toTimeString().slice(0, 5)) + '</span>' + bico('kac') + '<div><b>SLUŽBENO</b><span>🔒</span></div></div>';
+        h += u.map(redakDog).join('');
+      }
+      if (!ima) h += '<p class="opis">Još nema događaja.</p>';
+      return '<main style="--tb:' + B + ';padding-top:0">' + h + '</main>';
+    }
+    if (tab === 'karta') return '<main>' + h + karta(L) + '</main>';
+    return J.privremeno(t);
+  };
+  RJ['DAN 1'] = RJ['DAN 1'] || ['DAY 1','TAG 1','GIORNO 1'];
+  RX.push(['^DAN (\\d+)$', ['DAY $1','TAG $1','GIORNO $1']]);
+
+  function karta(L){
+    var Tt = L.tournament || {};
+    var ok = function(a){ return Array.isArray(a) ? a.map(function(p){ return [Number(p && p.lat), Number(p && p.lon)]; }).filter(function(p){ return isFinite(p[0]) && isFinite(p[1]); }) : []; };
+    var Z = ok(Tt.zone); if (Z.length < 3) Z = ok(Tt.zoneDisplay);
+    var T = (L.catches || []).filter(function(c){ return c.gpsLat != null && c.gpsLon != null; }).map(function(c){ return [Number(c.gpsLat), Number(c.gpsLon), c]; });
+    var sve = Z.concat(T.map(function(x){ return [x[0], x[1]]; }));
+    if (!sve.length) return '<p class="opis">Zona još nije objavljena.</p><p class="opis">Pozicije ulova javne su nakon zaključanog dana.</p>';
+    var la = sve.map(function(p){ return p[0]; }), lo = sve.map(function(p){ return p[1]; });
+    var mnA = Math.min.apply(null, la), mxA = Math.max.apply(null, la), mnO = Math.min.apply(null, lo), mxO = Math.max.apply(null, lo);
+    var k = Math.cos((mnA + mxA) / 2 * Math.PI / 180), W = 340, H = 240, m = 16;
+    var sx = (mxO - mnO) * k || 0.01, sy = (mxA - mnA) || 0.01, sc = Math.min((W - 2 * m) / sx, (H - 2 * m) / sy);
+    var P = function(a, o){ return [m + ((o - mnO) * k) * sc + ((W - 2 * m) - sx * sc) / 2, H - m - (a - mnA) * sc - ((H - 2 * m) - sy * sc) / 2]; };
+    var g = '<svg viewBox="0 0 ' + W + ' ' + H + '">';
+    if (Z.length >= 3) g += '<polygon points="' + Z.map(function(p){ return P(p[0], p[1]).map(function(v){ return v.toFixed(1); }).join(','); }).join(' ') + '" fill="rgba(95,168,255,.12)" stroke="#5fa8ff" stroke-width="2"/>';
+    g += T.map(function(x){ var q = P(x[0], x[1]); var c = x[2]; return '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="6" fill="' + BB[tip(c)] + '" stroke="#fff" stroke-width="1.5"/>'; }).join('');
+    g += '</svg>';
+    return '<div class="karta">' + g + '</div><div class="blegenda" style="margin-top:8px">' + [['pust','Pušteno'],['brod','Na brodu']].map(function(x){ return '<span>' + bico(x[0]) + x[1] + '</span>'; }).join('') + '</div><p class="opis">Pozicije ulova javne su nakon zaključanog dana.</p>';
+  }
+
+  /* ---------- list ekipe (odozdo) ---------- */
+  J.listEkipa = function(id){
+    var t = TURNIRI.find(function(x){ return x.id === S.t; }) || {}; var L = LB[t.id] && LB[t.id].d; if (!L) return '';
+    var e = (L.teams || []).find(function(x){ return String(x.teamId) === String(id); }); if (!e) return '';
+    var le = (L.leaderboard || []).find(function(x){ return String(x.teamId) === String(id); }) || {};
+    var mj = poredak(L, 'uk').findIndex(function(r){ return String(r.e.teamId) === String(id); });
+    var u = (L.catches || []).filter(function(c){ return String(c.teamId) === String(id); }).sort(function(a, b){ return (b.day - a.day) || String(b.time).localeCompare(String(a.time)); });
+    var kc = Math.max((L.feed || []).filter(function(f){ return f.kind === 'hooked' && String(f.teamId) === String(id); }).length, u.length);
+    var plas = (L.tournament || {}).rankingMode === 'placement';
+    var h = '<div class="rucka"></div><b style="font-size:23px" data-bezprijevoda>' + e_(e.name) + ' <span class="nbr">#' + e_(e.compNumber) + '</span></b>';
+    if (e.club) h += '<p class="opis" data-bezprijevoda>' + e_(e.club) + (e.clubCity ? ' · ' + e_(e.clubCity) : '') + '</p>';
+    h += '<div class="brojke"><div><b class="sport">' + (le.disqualified ? 'DSQ' : mj >= 0 ? (poredak(L, 'uk')[mj].mj) : '—') + '</b><small>' + (plas ? 'PB' : 'mjesto') + '</small></div><div><b class="sport">' + kc + '</b><small>kačenja</small></div><div><b class="sport">' + (le.catches || 0) + '</b><small>ulova</small></div><div><b class="sport">' + (plas ? (le.placementPoints != null ? broj(le.placementPoints) : '—') : broj(le.points || 0)) + '</b><small>' + (plas ? 'PB' : 'bodova') + '</small></div></div>';
+    h += '<div class="odj">⚓ POSADA</div>' + (e.anglers || []).map(function(c){ var kap = e.captain && c.name === e.captain; return '<div class="redak"><span class="av">' + e_(inic(c.name)) + '</span><div><b data-bezprijevoda>' + e_(c.name) + '</b>' + (kap ? '<small>kapetan</small>' : '') + '</div></div>'; }).join('');
+    h += '<div class="odj">🎣 ULOVI EKIPE</div>' + (u.length ? u.map(function(c){ return redakDog(Object.assign({}, c, { kind:'catch' })); }).join('') : '<p class="opis">Još nema ulova.</p>');
+    return h;
+  };
+  RJ['mjesto'] = RJ['mjesto'] || ['place','Platz','posto']; RJ['bodova'] = RJ['bodova'] || ['points','Punkte','punti'];
+  KLJUCEVI.length = 0; Object.keys(RJ).sort(function(a, b){ return b.length - a.length; }).forEach(function(k){ KLJUCEVI.push(k); });
+
+  /* ---------- klikovi ---------- */
+  document.addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-jek],[data-jpor]'); if (!b) return;
+    ev.stopPropagation(); ev.preventDefault();
+    if (b.dataset.jpor) { porDan = b.dataset.jpor; crtaj(); return; }
+    if (b.dataset.jek) { LIST = { k:'jek', id:b.dataset.jek }; crtaj(); }
+  }, true);
 })();
 </script>
 
