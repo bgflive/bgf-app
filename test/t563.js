@@ -1,0 +1,43 @@
+const { chromium } = require('playwright');
+const http = require('http'), fs = require('fs'), path = require('path');
+const ROOT = path.join(__dirname, '..');
+const srv = http.createServer((q, r) => { const u = decodeURIComponent(q.url.split('?')[0]); const f = path.join(ROOT, u === '/' ? 'index.html' : u); if (!fs.existsSync(f)) { r.writeHead(404); return r.end(); } r.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html; charset=utf-8' : 'application/octet-stream' }); r.end(fs.readFileSync(f)); }).listen(8563);
+const d = new Date(), danas = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+(async () => {
+  const b = await chromium.launch(); const greske = []; const rez = []; const ok = (n, u, i='') => rez.push([u ? '✅' : '❌', n, u ? '' : i]);
+  const c = await b.newContext({ viewport:{ width:390, height:844 }, locale:'hr-HR' }); const pg = await c.newPage(); pg.setDefaultTimeout(6000);
+  pg.on('pageerror', e => greske.push(e.message));
+  const st = { ev:[] };
+  await pg.route('**/bgf-live-backend.vercel.app/**', r => { const u = r.request().url(), m = r.request().method(); const J = (x, s=200) => r.fulfill({ status:s, contentType:'application/json', body:JSON.stringify(x) });
+    if (u.includes('/api/public/tournaments')) return J({ live:[], upcoming:[], finished:[] });
+    if (u.includes('/api/me/roles')) return J({ user:{ id:'PS', email:'pomocni@bgf.live', name:'Pero' }, person:{ first_name:'Pero', last_name:'P', bgf:'BGF-10090' }, roles:[{ role:'assistant_judge', tournamentId:'T1', teamId:'e0' }], tournaments:[{ id:'T1', name:'Kup', subdomain:'kup', day_dates:[danas] }], teams:[{ id:'e0', name:'TRITON' }] });
+    if (u.includes('/api/tournaments/T1/state')) return J({ tournament:{ id:'T1', name:'Kup', subdomain:'kup', start_date:danas, days:1, day_dates:[danas] }, fishingHours:[{ day_number:1, start_time:'00:00:00', end_time:'23:59:00' }], dayLocks:[], teams:[{ id:'e0', name:'TRITON', comp_number:1, anglers:[{ id:'a0', name:'Frane Rokov' }] }], ruleSpecies:[{ id:'s1', name:'Plavoperajna tuna', can_release:true }], ruleNotes:{}, users:[], verifications:[], incidents:[], sponsors:[] });
+    if (u.includes('/api/tournaments/T1/catch-status')) return J({ catches:[{ catchId:'c1', teamId:'e0', day:1, hookTime:'08:10', boatTime:'08:40', species:'Plavoperajna tuna', outcome:'released', stanje: st.ev.length ? 'confirmed_on_site' : 'sent', dogadaji: st.ev, prilozi:[], points:7 }] });
+    if (u.includes('/api/catches/c1/events') && m === 'POST') { st.ev.push({ kind:JSON.parse(r.request().postData()).kind, at:new Date().toISOString() }); return J({ ok:true }, 201); }
+    if (u.includes('/api/me/profil')) return J({ osoba:{ bgf:10090, ime:'Pero', prezime:'P', drzava:'HR', jezik:'hr', privola:{} }, klub:null, dozvole:[], vazeca:null, zahtjevi:[] });
+    if (u.includes('/api/me/prijave')) return J({ prijave:[] });
+    return J({}); });
+  await pg.addInitScript(() => { localStorage.setItem('bgf-pravo', JSON.stringify({ access:'tokP', refresh:'refP', istek:Date.now() + 3600000, red:[], veze:{} })); });
+  await pg.goto('http://localhost:8563/'); await pg.waitForTimeout(2000);
+  const app = async () => (await pg.innerText('#app')) || '';
+  ok('pomoćni sudac ulazi u turnirski način broda (⚖ TRITON)', await pg.evaluate(() => S.v === 'tm' && PRAVO.on && PRAVO.pomocni === true) && (await app()).includes('⚖ TRITON'), await app().then(t => t.slice(0, 200)));
+  await pg.waitForTimeout(1500); let tx = await app();
+  const gumb = await pg.$('[data-pompotvrdi="c1"]');
+  ok('ulov broda ima gumb „Potvrdi na licu mjesta”', !!gumb, tx.slice(0, 600));
+  if (gumb) { await gumb.click(); await pg.waitForTimeout(1200); tx = await app(); }
+  ok('potvrda → POST confirmed_on_site, prikaz „Potvrđeno na licu mjesta”', st.ev.length === 1 && st.ev[0].kind === 'confirmed_on_site' && tx.includes('Potvrđeno na licu mjesta'), JSON.stringify(st.ev) + tx.slice(0, 300));
+  await pg.evaluate(() => { S.v = 'profil'; crtaj(); }); await pg.waitForTimeout(400); tx = await app();
+  ok('Moj profil → Moje uloge: Kup · ⚖ Pomoćni sudac', tx.includes('MOJE ULOGE') && tx.includes('Pomoćni sudac'), tx.slice(0, 400));
+  await pg.evaluate(() => { window.__t = []; ZVUK.kacenje = () => window.__t.push('k'); ZVUK.sudac = () => window.__t.push('s'); ZVUK.poruka = () => window.__t.push('p'); });
+  await pg.waitForTimeout(3500);
+  await pg.evaluate(() => { TM.otvorena.push({ n: 99, v: '10:00', ko: 'x', sek: 0, t0: Date.now() }); }); await pg.waitForTimeout(3500);
+  ok('569: novo kačenje → zvuk/vibracija', (await pg.evaluate(() => window.__t)).includes('k'), JSON.stringify(await pg.evaluate(() => window.__t)));
+  await pg.evaluate(() => { S.v = 'profil'; crtaj(); }); await pg.waitForTimeout(300); tx = await app();
+  ok('569: Moj profil ima prekidač „Zvuk i vibracija · uključeno”', tx.includes('Zvuk i vibracija') && tx.includes('uključeno'));
+  await pg.click('[data-zvuk]'); await pg.waitForTimeout(200); tx = await app();
+  ok('569: prekidač isključuje i pamti', tx.includes('isključeno') && await pg.evaluate(() => localStorage.getItem('bgf-zvuk') === 'ne'));
+  ok('bez JS grešaka', greske.length === 0, greske.join(' | ').slice(0, 300));
+  for (const r of rez) console.log(r[0], r[1], r[2] ? '\n   → ' + r[2].replace(/\n/g, ' ').slice(0, 500) : '');
+  console.log(rez.filter(r => r[0] === '✅').length + '/' + rez.length);
+  await b.close(); srv.close();
+})();

@@ -1,0 +1,35 @@
+const { chromium } = require('playwright');
+const http = require('http'), fs = require('fs'), path = require('path');
+const ROOT = path.join(__dirname, '..');
+const srv = http.createServer((q, r) => { const u = decodeURIComponent(q.url.split('?')[0]); const f = path.join(ROOT, u === '/' ? 'index.html' : u); if (!fs.existsSync(f)) { r.writeHead(404); return r.end(); } r.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html; charset=utf-8' : 'application/octet-stream' }); r.end(fs.readFileSync(f)); }).listen(8564);
+const d = new Date(), danas = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+(async () => {
+  const b = await chromium.launch(); const greske = []; const rez = []; const ok = (n, u, i='') => rez.push([u ? '✅' : '❌', n, u ? '' : i]);
+  const c = await b.newContext({ viewport:{ width:390, height:844 }, locale:'hr-HR' }); const pg = await c.newPage(); pg.setDefaultTimeout(6000);
+  pg.on('pageerror', e => greske.push(e.message));
+  const st = { inc:[] };
+  await pg.route('**/bgf-live-backend.vercel.app/**', r => { const u = r.request().url(), m = r.request().method(); const J = (x, s=200) => r.fulfill({ status:s, contentType:'application/json', body:JSON.stringify(x) });
+    if (u.includes('/api/public/tournaments')) return J({ live:[], upcoming:[], finished:[] });
+    if (u.includes('/api/me/roles')) return J({ user:{ id:'C', email:'kap@gmail.com', name:'Kap' }, person:null, roles:[{ role:'team', tournamentId:'T1', teamId:'e0' }], tournaments:[{ id:'T1', name:'Kup', subdomain:'kup', day_dates:[danas] }], teams:[{ id:'e0', name:'TRITON' }] });
+    if (u.includes('/api/tournaments/T1/state')) return J({ tournament:{ id:'T1', name:'Kup', subdomain:'kup', start_date:danas, days:1, day_dates:[danas] }, fishingHours:[{ day_number:1, start_time:'00:00:00', end_time:'23:59:00' }], dayLocks:[], teams:[{ id:'e0', name:'TRITON', comp_number:1, anglers:[{ id:'a0', name:'Frane' }] }], ruleSpecies:[{ id:'s1', name:'Tuna', can_release:true }], ruleNotes:{}, users:[], verifications:[], incidents:[], sponsors:[] });
+    if (u.includes('/api/tournaments/T1/incidents') && m === 'POST') { const b2 = JSON.parse(r.request().postData()); st.inc.push({ id:'i' + st.inc.length, description:b2.description, day:b2.day, status:'open', source:'app', decision:null }); return J({ ok:true, id:'i0' }, 201); }
+    if (u.includes('/api/tournaments/T1/incidents')) return J({ incidents:st.inc.map((x, i) => i === 0 && st.odluka ? { ...x, status:'resolved', decision:st.odluka } : x), openCount:1, protestMinutes:45, rokPoDanu:{} });
+    return J({}); });
+  await pg.addInitScript(() => { localStorage.setItem('bgf-pravo', JSON.stringify({ access:'tokC', refresh:'refC', istek:Date.now() + 3600000, red:[], veze:{} })); });
+  await pg.goto('http://localhost:8564/'); await pg.waitForTimeout(2000);
+  const app = async () => (await pg.innerText('#app')) || '';
+  ok('kapetan u turnirskom načinu ima gumb ⚖ Prigovor', await pg.evaluate(() => S.v === 'tm') && !!(await pg.$('[data-ulprig="-1"]')));
+  await pg.click('[data-ulprig="-1"]'); await pg.waitForTimeout(500); let lst = await pg.innerText('.list');
+  ok('list prigovora: rok 45 minuta, polje, bez izmišljenog „do 17:30”', lst.includes('45 minuta') && !lst.includes('17:30') && !!(await pg.$('[data-prigtekst]')), lst.slice(0, 300));
+  await pg.click('[data-prigposalji]'); await pg.waitForTimeout(200); lst = await pg.innerText('.list');
+  ok('prekratko obrazloženje → poruka, ne šalje', st.inc.length === 0 && lst.includes('bar 5 znakova'));
+  await pg.fill('[data-prigtekst]', 'Ekipa 3 nam je prešla preko linija'); await pg.click('[data-prigposalji]'); await pg.waitForTimeout(700); lst = await pg.innerText('.list');
+  ok('prigovor poslan (dan 1) i vidi se u „Moji prigovori” kao otvoren', st.inc.length === 1 && st.inc[0].day === 1 && lst.includes('Prigovor je poslan sucu') && lst.includes('MOJI PRIGOVORI') && lst.includes('otvoren'), JSON.stringify(st.inc) + lst.slice(0, 300));
+  st.odluka = 'Odbijen: snimka ne pokazuje prekršaj.';
+  await pg.mouse.click(195, 40); await pg.waitForTimeout(300); await pg.click('[data-ulprig="-1"]'); await pg.waitForTimeout(600); lst = await pg.innerText('.list');
+  ok('nakon odluke suca: riješen · Odluka: …', lst.includes('riješen') && lst.includes('Odluka: Odbijen'), lst.slice(0, 400));
+  ok('bez JS grešaka', greske.length === 0, greske.join(' | ').slice(0, 300));
+  for (const r of rez) console.log(r[0], r[1], r[2] ? '\n   → ' + r[2].replace(/\n/g, ' ').slice(0, 500) : '');
+  console.log(rez.filter(r => r[0] === '✅').length + '/' + rez.length);
+  await b.close(); srv.close();
+})();
