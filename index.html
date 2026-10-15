@@ -485,7 +485,7 @@ body.tmmod .uz{color:#0456E8!important}
 .kkoraci span.cek{background:#fef3c7;color:#92400e}
 .info .brzo, main > .brzo{margin:0 0 12px}
 /* 505 · oznaka verzije (da se vidi koja je verzija na mobitelu) */
-body::after{content:'v575';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
+body::after{content:'v583';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
 /* 515 · stanje ribe bojom ruba (Nikola 13.10.) */
 .ulov.rub-zeleno{border-left:5px solid #16a34a;border-radius:0 12px 12px 0}
 .ulov.rub-plavo{border-left:5px solid #2563eb;border-radius:0 12px 12px 0}
@@ -3778,7 +3778,7 @@ var REG;
     'ukupno paketa':['packages in total','Pakete gesamt','confezioni totali'], 'nije naručila':['not ordered','nicht bestellt','non ordinato'],
     'Prijave i ždrijeb, liste i obrasci, postavke, izgled boarda, sponzori, korisnici i dnevnik rade u web adminu — i na mobitelu.':['Entries and draw, lists and forms, settings, board layout, sponsors, users and the log are in the web admin — on mobile too.','Anmeldungen und Auslosung, Listen und Formulare, Einstellungen, Board, Sponsoren, Benutzer und Protokoll sind im Web-Admin — auch am Handy.','Iscrizioni e sorteggio, elenchi e moduli, impostazioni, board, sponsor, utenti e registro sono nell’admin web — anche da mobile.'],
     'Otvori web admin ↗':['Open web admin ↗','Web-Admin öffnen ↗','Apri admin web ↗'], 'počinje za':['starts in','beginnt in','inizia tra'], 'dana':['days','Tagen','giorni'],
-    'u tijeku':['in progress','läuft','in corso'],
+    'u tijeku':['in progress','läuft','in corso'], 'nema registracije broda':['no boat registration','keine Bootskennung','manca targa della barca'],
     'Prijave':['Entries','Anmeldungen','Iscrizioni'], 'ČEKA POTVRDU':['AWAITING APPROVAL','WARTET AUF BESTÄTIGUNG','IN ATTESA'], 'POTVRĐENE':['CONFIRMED','BESTÄTIGT','CONFERMATE'], 'ODBIJENE I ODUSTALE':['REJECTED AND WITHDRAWN','ABGELEHNT UND ZURÜCKGEZOGEN','RIFIUTATE E RITIRATE'],
     'Potvrdi':['Confirm','Bestätigen','Conferma'], 'Odbij':['Reject','Ablehnen','Rifiuta'], 'Odustala':['Withdrawn','Zurückgezogen','Ritirata'], 'Vrati':['Restore','Wiederherstellen','Ripristina'],
     'Nema prijava na čekanju.':['No entries waiting.','Keine wartenden Anmeldungen.','Nessuna iscrizione in attesa.'], 'Odbiti prijavu':['Reject entry','Anmeldung ablehnen','Rifiutare iscrizione'],
@@ -3861,6 +3861,7 @@ var REG;
         var zad = [];
         nepl.forEach(function(e){ zad.push('💶 <span data-bezprijevoda>' + e_(e.name) + '</span> · ' + T('Neplaćeno') + ' ' + Number(e.fee_amount || 0) + ' €'); });
         dz.forEach(function(e){ zad.push('📄 <span data-bezprijevoda>' + e_(e.name) + '</span> · ' + T('dozvola nije važeća')); });
+        A.filter(function(e){ return !String(e.boat_reg || '').trim(); }).forEach(function(e){ zad.push('🚤 <span data-bezprijevoda>' + e_(e.name) + '</span> · ' + T('nema registracije broda')); });   /* 583 */
         cek.forEach(function(e){ zad.push('📝 <span data-bezprijevoda>' + e_(e.name) + '</span> · ' + T('čeka potvrdu')); });
         h += '<div class="odj">' + T('⚠ ZA NAPRAVITI') + '</div>' + (zad.length ? '<div class="info">' + zad.slice(0, 30).map(function(z){ return '<div><span>' + z + '</span></div>'; }).join('') + '</div>' : '<p class="opis">' + T('Sve je u redu.') + '</p>');
         h += '<div class="odj">🐟 ' + T('Srdele').toUpperCase() + ' · ' + T('Dan') + ' ' + (O.srdDan || '') + '</div><div class="info"><div data-ultab="srdele" style="cursor:pointer"><b>' + srdUk + ' ' + T('ukupno paketa') + '</b><span>›</span></div></div>';
@@ -3971,7 +3972,7 @@ var REG;
   }
   function obrazac(uredi){
     var f = Z.f;
-    var h = '<div class="mk">' + polje(T('Naziv ekipe'), 'naziv', f.naziv, ' maxlength="40"') + polje(T('Brod'), 'brod', f.brod) + '<div style="display:flex;gap:8px"><div style="flex:1">' + polje(T('Registracija broda'), 'registracija', f.registracija) + '</div><div style="flex:1">' + polje(T('Telefon za kontakt'), 'telefon', f.telefon, ' inputmode="tel"') + '</div></div>'
+    var h = '<div class="mk">' + polje(T('Naziv ekipe'), 'naziv', f.naziv, ' maxlength="40"') + polje(T('Brod'), 'brod', f.brod) + '<div style="display:flex;gap:8px"><div style="flex:1">' + polje(T('Registracija broda') + ' *', 'registracija', f.registracija, ' placeholder="DU-1234"') + '</div><div style="flex:1">' + polje(T('Telefon za kontakt'), 'telefon', f.telefon, ' inputmode="tel"') + '</div></div>'
       + '<div class="odj">' + T('⚓ POSADA') + ' (' + f.clanovi.length + '/8)</div>'
       + f.clanovi.map(function(c, i){ return '<div class="redak"><div style="min-width:0;flex:1"><b data-bezprijevoda>' + e_(c.ime) + (c.bgf ? ' <span class="nbr">BGF-' + c.bgf + '</span>' : '') + '</b><small>' + (c.bgf ? '' : T('bez računa')) + '</small></div><select class="polje" style="width:auto;margin:0 6px" data-pzuloga="' + i + '">' + [['captain','kapetan'],['crew','posada'],['reserve','pričuva']].map(function(u){ return '<option value="' + u[0] + '"' + (c.uloga === u[0] ? ' selected' : '') + '>' + T(u[1]) + '</option>'; }).join('') + '</select>' + (c.ja ? '' : '<button class="zvono" data-pzmakni="' + i + '">✕</button>') + '</div>'
         + (c.ja ? '' : '<label class="kvac" style="margin:-4px 0 8px;font-size:13px"><input type="checkbox" data-pzmal="' + i + '"' + (c.maloljetan ? ' checked' : '') + '> ' + T('maloljetan/na (do 18 g.)') + '</label>')

@@ -36,7 +36,7 @@ const LIST = { live:[], upcoming:[{ id:'T7', subdomain:'felun2027', name:'Big Ga
   ({ pg, c, st } = await scena(true));
   await pg.click('[data-t="felun2027"] >> nth=0'); await pg.waitForTimeout(500); await pg.click('[data-pe]'); await pg.waitForTimeout(600); tx = await app(pg);
   ok('obrazac: ja sam kapetan (BGF-10077), posada 1/8, propozicije', tx.includes('Frane Rokov') && tx.includes('BGF-10077') && tx.includes('POSADA (1/8)') && tx.includes('propozicije turnira'), tx.slice(0, 500));
-  await pg.fill('[data-pz="naziv"]', 'GALEB'); await pg.fill('[data-pz="brod"]', 'Cranchi 36');
+  await pg.fill('[data-pz="naziv"]', 'GALEB'); await pg.fill('[data-pz="brod"]', 'Cranchi 36'); await pg.fill('[data-pz="registracija"]', 'DU-1234');
   await pg.fill('[data-pzq]', 'pero'); await pg.waitForTimeout(600); tx = await app(pg);
   ok('traženje člana: Pero Perić BGF-10078 + „Dodaj bez računa”', tx.includes('Pero Perić') && tx.includes('BGF-10078') && tx.includes('Dodaj bez računa'), tx.slice(0, 600));
   await pg.click('[data-pzdodaj="10078"]'); await pg.waitForTimeout(200);
