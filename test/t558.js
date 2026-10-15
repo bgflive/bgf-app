@@ -51,6 +51,10 @@ const LIST = { live:[], upcoming:[{ id:'T7', subdomain:'felun2027', name:'Big Ga
   await pg.screenshot({ path:path.join(__dirname, 'slike', '558-kartica.png'), fullPage:true });
   await pg.click('nav.dno [data-v="profil"]'); await pg.waitForTimeout(500); tx = await app(pg);
   ok('Moj profil: MOJE PRIJAVE → GALEB · Big Game Felun 2027 · čeka', tx.includes('MOJE PRIJAVE') && tx.includes('GALEB · Big Game Felun 2027'), tx.slice(0, 400));
+  ok('575: profil ima digitalnu karticu i pravila privatnosti', tx.includes('Digitalna kartica') && tx.includes('Pravila privatnosti'));
+  await pg.click('[data-kartica]'); await pg.waitForTimeout(600); { const l = await pg.innerText('.list');
+  ok('575: kartica s imenom i BGF brojem (QR se učitava s cdnjs)', l.includes('Frane Rokov') && l.includes('BGF-10077'), l.slice(0, 200)); }
+  await pg.mouse.click(195, 40); await pg.waitForTimeout(300);
   await pg.click('[data-pzotvori="felun2027"]'); await pg.waitForTimeout(400);
   await pg.click('[data-pzuredi]'); await pg.waitForTimeout(300); tx = await app(pg);
   ok('Uredi: obrazac s posadom 3/8 i BGF brojevima', tx.includes('POSADA (3/8)') && tx.includes('BGF-10078') && tx.includes('Spremi izmjene'), tx.slice(0, 500));

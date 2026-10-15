@@ -81,6 +81,9 @@ const srv = http.createServer((q, r) => { const u = decodeURIComponent(q.url.spl
   ok('kriva potvrda → ne briše', !S.obrisano && (await app()).includes('Za potvrdu upiši OBRIŠI'));
   await pg.fill('[data-r="brisiPotvrda"]', 'obriši'); await pg.click('[data-rbrisida]'); await pg.waitForTimeout(500); tx = await app();
   ok('OBRIŠI → DELETE /api/me/racun, odjava, poruka „Račun je obrisan.”', S.obrisano?.potvrda === 'OBRIŠI' && tx.includes('Račun je obrisan.') && await pg.evaluate(() => !PRAVO.imaSesiju()), tx.slice(0, 300));
+  await pg.evaluate(() => { S.v = 'profil'; crtaj(); }); await pg.waitForTimeout(300);
+  ok('574: tema u profilu, klik mijenja i pamti', !!(await pg.$('[data-tema]')) && await pg.evaluate(async () => { document.querySelector('[data-tema]').click(); await new Promise(r => setTimeout(r, 200)); return localStorage.getItem('bgf-tema') === 'svijetla'; }));
+  ok('574: lijevak u traci vodi na Turniri', !!(await pg.$('button.filtar[data-v="turniri"]')));
   ok('bez JS grešaka', greske.length === 0, greske.join(' | ').slice(0, 400));
   for (const r of rez) console.log(r[0], r[1], r[2] ? '\n   → ' + r[2].replace(/\n/g, ' ').slice(0, 500) : '');
   console.log(rez.filter(r => r[0] === '✅').length + '/' + rez.length);

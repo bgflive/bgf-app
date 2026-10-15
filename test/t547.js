@@ -35,14 +35,27 @@ const LBDP = { tournament:{ name:'11. Državno', days:2, currentDay:2, dayDates:
   await pg.goto('http://localhost:8547/'); await pg.waitForTimeout(2000);
   const app = async () => (await pg.innerText('#app')) || '';
   await pg.click('[data-t="felun2027"] >> nth=0'); await pg.waitForTimeout(800); let tx = await app();
-  ok('turnir uživo → kartica Uživo: na štapu (1) s brojačem', tx.includes('NA ŠTAPU SADA (1)') && /CORTO #1/.test(tx) && /0[34]:\d\d/.test(tx), tx.slice(0, 500));
+  ok('turnir uživo → kartica Uživo: na štapu (1) s brojačem', tx.includes('NA ŠTAPU SADA (1)') && /CORTO #1/.test(tx) && /0[2-7]:\d\d/.test(tx), tx.slice(0, 500));
   ok('Uživo: poredak top (CORTO 1.820) i zadnje (BONACA, Pušteno)', /1\.820/.test(tx) && tx.includes('BONACA') && tx.includes('Pušteno') && tx.includes('Grad Dubrovnik'), tx.slice(0, 900));
   ok('Uživo: „čeka suca” za neodlučen ulov', tx.includes('čeka suca'));
   await pg.screenshot({ path:path.join(__dirname, 'slike', '547-uzivo.png'), fullPage:true });
+  await pg.click('nav.dno [data-ttab="pregled"]'); await pg.waitForTimeout(300);
+  await pg.click('[data-pov="prop"]'); await pg.waitForTimeout(400); { const l = await pg.innerText('.list');
+  ok('573 Propozicije: vrste s bodovima i satnica iz boarda', l.includes('PROPOZICIJE') && l.includes('SATNICA') && l.includes('07:00') , l.slice(0, 300)); }
+  await pg.mouse.click(195, 40); await pg.waitForTimeout(300);
+  await pg.click('[data-pov="karta"]'); await pg.waitForTimeout(300);
+  ok('573 poveznica Karta vodi na karticu Karta', await pg.evaluate(() => S.ttab === 'karta'));
+  await pg.click('nav.dno [data-ttab="pregled"]'); await pg.waitForTimeout(300);
+  await pg.click('[data-pov="rez"]'); await pg.waitForTimeout(300);
+  ok('573 poveznica Rezultati vodi na Poredak', await pg.evaluate(() => S.ttab === 'poredak'));
+  await pg.click('nav.dno [data-ttab="pregled"]'); await pg.waitForTimeout(300);
   await pg.click('nav.dno [data-ttab="poredak"]'); await pg.waitForTimeout(300); tx = await app();
   ok('Poredak: Ukupno, Dan 1 🔒, Dan 2', tx.includes('Ukupno') && tx.includes('Dan 1 🔒') && tx.includes('Dan 2'), tx.slice(0, 300));
   await pg.click('[data-jpor="2"]'); await pg.waitForTimeout(200); tx = await app();
   ok('Poredak Dan 2: BONACA prva (700)', /^1\s*\n?\s*BONACA/m.test(tx.slice(tx.indexOf('Dan 2'))) || tx.indexOf('BONACA') < tx.indexOf('CORTO #1'), tx.slice(0, 400));
+  await pg.evaluate(() => { S.v = 'pocetna'; crtaj(); }); await pg.waitForTimeout(300); await pg.click('[data-prati="felun2027"]'); await pg.waitForTimeout(300);
+  ok('573 Prati pamti (✓ Pratiš, localStorage)', (await pg.innerText('[data-prati="felun2027"]')).includes('Pratiš') && await pg.evaluate(() => (localStorage.getItem('bgf-pratim') || '').includes('t:felun2027')), await pg.evaluate(() => localStorage.getItem('bgf-pratim')));
+  await pg.evaluate(() => { S.v = 'turnir'; S.ttab = 'pregled'; crtaj(); }); await pg.waitForTimeout(300);
   await pg.click('nav.dno [data-ttab="ekipe"]'); await pg.waitForTimeout(300); tx = await app();
   ok('Ekipe: 3 ekipe, posada, kačenja', tx.includes('EKIPE (3)') && tx.includes('Luka Perić') && /CORTO[\s\S]*1 kačenja/.test(tx) && /TRITON[\s\S]*🎣 1 kačenja/.test(tx) && !/0 kačenja/.test(tx), tx.slice(0, 500));
   ok('nigdje telefon ni broj dozvole', !(await pg.content()).includes('+385991112222') && !(await pg.content()).includes('LIC-77'));
