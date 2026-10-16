@@ -46,9 +46,11 @@ const LIST = { live:[], upcoming:[{ id:'T7', subdomain:'felun2027', name:'Big Ga
   ok('567: član označen kao maloljetan dobiva polje za skrbnika', !!(await pg.$('[data-pzskrb="2"]')) && await pg.evaluate(() => document.querySelector('[data-pzskrb="2"]').value === 'Mate Matić stariji'));
   await pg.click('[data-pzposalji]'); await pg.waitForTimeout(200); tx = await app(pg);
   ok('bez propozicija ne šalje', !st.post && tx.includes('propozicije'));
-  await pg.check('[data-pz="propozicije"]'); await pg.click('[data-pzposalji]'); await pg.waitForTimeout(700); tx = await app(pg);
+  await pg.check('[data-pz="propozicije"]'); await pg.click('[data-pzposalji]'); await pg.waitForTimeout(300); tx = await app(pg);
+  ok('604: bez izjave kapetana (posada upoznata s privatnošću) ne šalje', !st.post && tx.includes('pravilima privatnosti'));
+  await pg.check('[data-pz="posadaObavijestena"]'); await pg.click('[data-pzposalji]'); await pg.waitForTimeout(700); tx = await app(pg);
   ok('POST: naziv, brod, 3 člana (bgf/ime, uloge) → kartica „čeka potvrdu organizatora”, kotizacija 300 € nije plaćeno', st.post?.naziv === 'GALEB' && st.post.brod === 'Cranchi 36' && st.post.clanovi.length === 3 && st.post.clanovi[0].bgf === 10077 && st.post.clanovi[0].uloga === 'captain' && st.post.clanovi[1].bgf === 10078 && st.post.clanovi[2].ime === 'Mate Matić' && st.post.clanovi[2].maloljetan === true && st.post.clanovi[2].skrbnik === 'Mate Matić stariji' && tx.includes('čeka potvrdu organizatora') && tx.includes('300 €'), JSON.stringify(st.post) + tx.slice(0, 300));
-  await pg.screenshot({ path:path.join(__dirname, 'slike', '558-kartica.png'), fullPage:true });
+  await pg.screenshot({ path:'/home/claude/pw/558-kartica.png', fullPage:true });
   await pg.click('nav.dno [data-v="profil"]'); await pg.waitForTimeout(500); tx = await app(pg);
   ok('Moj profil: MOJE PRIJAVE → GALEB · Big Game Felun 2027 · čeka', tx.includes('MOJE PRIJAVE') && tx.includes('GALEB · Big Game Felun 2027'), tx.slice(0, 400));
   ok('575: profil ima digitalnu karticu i pravila privatnosti', tx.includes('Digitalna kartica') && tx.includes('Pravila privatnosti'));

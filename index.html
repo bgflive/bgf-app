@@ -485,7 +485,7 @@ body.tmmod .uz{color:#0456E8!important}
 .kkoraci span.cek{background:#fef3c7;color:#92400e}
 .info .brzo, main > .brzo{margin:0 0 12px}
 /* 505 · oznaka verzije (da se vidi koja je verzija na mobitelu) */
-body::after{content:'v603';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
+body::after{content:'v604';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
 /* 515 · stanje ribe bojom ruba (Nikola 13.10.) */
 .ulov.rub-zeleno{border-left:5px solid #16a34a;border-radius:0 12px 12px 0}
 .ulov.rub-plavo{border-left:5px solid #2563eb;border-radius:0 12px 12px 0}
@@ -1224,7 +1224,8 @@ function listHtml(){
   if (LIST.k === 'jek' && window.JAVNO && JAVNO.listEkipa) return JAVNO.listEkipa(LIST.id);   // 547: prava ekipa
   if (LIST.k === 'tm-kod' && window.EKOD) return EKOD.list();   // 552: pravi ekipni kod
   if (LIST.k === 'prop' && window.PROPOZ) return PROPOZ(TURNIRI.find(x => x.id === S.t) || {});   // 573: propozicije
-  if (LIST.k === 'kartica' && window.KARTICA) return KARTICA();   // 575: digitalna kartica
+  if (LIST.k === 'kartica' && window.KARTICA) return KARTICA();
+  if (LIST.k === 'privola' && window.PRIVOLA) return PRIVOLA.list();   // 604   // 575: digitalna kartica
   if (LIST.k === 'jezik') return `<div class="rucka"></div><b style="font-size:21px">Jezik · Language · Sprache · Lingua</b><div class="mjlista" style="margin-top:8px">${[['hr','🇭🇷','Hrvatski'],['en','🇬🇧','English'],['de','🇩🇪','Deutsch'],['it','🇮🇹','Italiano']].map(([k, z, n]) => `<button data-jz="${k}">${z} <b>${n}</b><small>${S.jezik === k ? '✓' : ''}</small></button>`).join('')}</div>`;
   if (LIST.k === 'tv') return `<div class="rucka"></div><b style="font-size:20px">📺 Board preko cijelog ekrana</b><p class="opis">Okreni mobitel položeno — otvara se isti board kao na TV-u (felun2027.bgf.live): poredak, kačenja, video, sponzori. Može se poslati i na televizor (Chromecast / AirPlay).</p><div style="aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#071A2D;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:4px;padding:6px"><div style="background:#0c2440;border-radius:6px"></div><div style="background:#0b1f3a;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#9fb3cf;font-size:11px">video</div><div style="background:#0c2440;border-radius:6px"></div></div><button class="plavi" style="margin-top:12px">Otvori board</button>`;
   if (LIST.k === 'dijeli' && window.DIJELI) return DIJELI.list(LIST.i);   /* 565 · K23 */
@@ -3562,7 +3563,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
         + polje(T('Kod iz e-pošte (6 znamenki)'), 'kod', R.kod, 'text', ' inputmode="numeric" autocomplete="one-time-code" maxlength="6" style="letter-spacing:6px;font-size:22px;text-align:center"')
         + '<button class="sir" data-rnovikod style="margin-top:8px">' + T('Pošalji novi kod') + '</button></div>';
       if (k === 2) h = '<div class="mk"><h3>👤 ' + T('Podaci') + '</h3>' + polje(T('Ime'), 'ime', R.d.ime, 'text', ' autocomplete="given-name"') + polje(T('Prezime'), 'prezime', R.d.prezime, 'text', ' autocomplete="family-name"')
-        + polje(T('Nadimak (nije obavezno)'), 'nadimak', R.d.nadimak) + polje(T('Datum rođenja · privatno'), 'datumRodjenja', R.d.datumRodjenja, 'date') + polje(T('Mjesto'), 'mjesto', R.d.mjesto) + polje(T('Država (HR, SI, IT…)'), 'drzava', R.d.drzava, 'text', ' maxlength="2" style="text-transform:uppercase"')
+        + polje(T('Nadimak (nije obavezno)'), 'nadimak', R.d.nadimak) + polje(T('Datum rođenja · privatno'), 'datumRodjenja', R.d.datumRodjenja, 'date') + (window.RODITELJ_HTML ? RODITELJ_HTML(R) : '') + polje(T('Mjesto'), 'mjesto', R.d.mjesto) + polje(T('Država (HR, SI, IT…)'), 'drzava', R.d.drzava, 'text', ' maxlength="2" style="text-transform:uppercase"')
         + '<label class="kvac" style="align-items:flex-start;margin-top:12px"><input type="checkbox" data-r="privola"' + (R.d.privola ? ' checked' : '') + '> <span>' + T('Prihvaćam uvjete korištenja i pravila privatnosti BGF.LIVE. Ime, ekipa i rezultati su javni; datum rođenja i mjesto vide samo organizatori turnira.') + ' <a href="privatnost.html" target="_blank" rel="noopener">' + T('Pravila privatnosti') + ' ↗</a></span></label></div>';
       if (k === 3) { var L = R.kandidati || [];
         h = '<div class="mk"><h3>🗂 ' + T('Jesi li ovo ti?') + '</h3>' + (L.length ? '<p class="opis">' + T('Ovo su osobe iz arhive i s turnira s tvojim imenom, a bez računa. Ako je jedna od njih ti, označi je — Master potvrđuje i tada preuzimaš stari BGF broj i svoje nastupe.') + '</p>'
@@ -3605,7 +3606,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     if (k === 5) return zavrsi(true);
   }
   function zavrsi(sDozvolom){
-    var d = R.d, b = { ime:d.ime.trim(), prezime:d.prezime.trim(), nadimak:d.nadimak, mjesto:d.mjesto, drzava:d.drzava || 'HR', datumRodjenja:d.datumRodjenja, jezik:S.jezik, privola:VERZIJA };
+    var d = R.d, b = { ime:d.ime.trim(), prezime:d.prezime.trim(), nadimak:d.nadimak, mjesto:d.mjesto, drzava:d.drzava || 'HR', datumRodjenja:d.datumRodjenja, jezik:S.jezik, privola:VERZIJA, roditeljIme:d.roditeljIme || '', roditeljPotvrda:d.roditeljPotvrda === true };   /* 604 */
     if (R.preuzmi) b.preuzmi = R.preuzmi;
     if (R.klub.tip === 'popis' && R.klub.id) b.klub = { id:R.klub.id }; else if (R.klub.tip === 'ostalo') b.klub = { ostalo:R.klub.ostalo.trim() };
     if (sDozvolom) b.dozvola = { vrsta:R.dz.vrsta, broj:R.dz.broj, od:R.dz.od, do:R.dz.do };
@@ -4056,7 +4057,7 @@ var REG;
       + (f.clanovi.length < 8 ? '<label class="lab">' + T('Dodaj člana: ime, prezime ili BGF broj') + '</label><input class="polje" data-pzq value="' + e_(Z.q) + '" autocomplete="off">'
         + (Z.q.trim().length >= 2 ? '<div class="info" style="margin-top:6px">' + ((Z.rez && Z.rez.osobe) || []).filter(function(o){ return !f.clanovi.some(function(c){ return c.bgf === o.bgf; }); }).slice(0, 6).map(function(o){ return '<div data-pzdodaj="' + o.bgf + '" style="cursor:pointer"><b data-bezprijevoda>' + e_(o.ime) + '</b><span>BGF-' + o.bgf + ' ＋</span></div>'; }).join('')
           + (!/^\s*(bgf[\s-]*)?\d{5,6}\s*$/i.test(Z.q) ? '<div data-pzdodajime="1" style="cursor:pointer"><b data-bezprijevoda>' + e_(Z.q.trim()) + '</b><span>' + T('Dodaj bez računa') + ' ＋</span></div>' : '') + '</div>' : '') : '')
-      + '<label class="kvac" style="align-items:flex-start;margin-top:12px"><input type="checkbox" data-pz="propozicije"' + (f.propozicije ? ' checked' : '') + '> <span>' + T('Pročitali smo propozicije turnira i prihvaćamo ih.') + '</span></label>'
+      + '<label class="kvac" style="align-items:flex-start;margin-top:12px"><input type="checkbox" data-pz="propozicije"' + (f.propozicije ? ' checked' : '') + '> <span>' + T('Pročitali smo propozicije turnira i prihvaćamo ih.') + '</span></label>' + '<label class="kvac" style="align-items:flex-start;margin-top:8px"><input type="checkbox" data-pz="posadaObavijestena"' + (f.posadaObavijestena ? ' checked' : '') + '> <span>' + T('Svi članovi posade upoznati su s pravilima privatnosti i suglasni s objavom imena, ekipe i rezultata (za maloljetne — roditelj ili skrbnik).') + ' <a href="privatnost.html" target="_blank" rel="noopener">' + T('Pravila privatnosti') + ' ↗</a></span></label>'
       + (Z.greska ? '<p class="opis" style="color:#b91c1c">' + e_(Z.greska) + '</p>' : '')
       + '<div class="pedno">' + (uredi ? '<button class="sir" data-pzodustaniur>' + T('Odustani') + '</button>' : '') + '<button class="plavi" data-pzposalji' + (Z.salje ? ' disabled' : '') + '>' + T(uredi ? 'Spremi izmjene' : 'Pošalji prijavu') + '</button></div></div>';
     return h;
@@ -4093,7 +4094,8 @@ var REG;
   function posalji(){
     var t = turnir(), p = moja(), f = Z.f; Z.greska = '';
     if (!f.propozicije) { Z.greska = T('Pročitali smo propozicije turnira i prihvaćamo ih.'); return crtaj(); }
-    var tijelo = { naziv:f.naziv, brod:f.brod, registracija:f.registracija, telefon:f.telefon, propozicije:true, clanovi:f.clanovi.map(function(c){ var x = c.bgf ? { bgf:c.bgf, uloga:c.uloga } : { ime:c.ime, uloga:c.uloga }; if (c.maloljetan) { x.maloljetan = true; x.skrbnik = c.skrbnik || ''; } return x; }) };
+    if (!f.posadaObavijestena && !(Z.uredi && p)) { Z.greska = T('Svi članovi posade upoznati su s pravilima privatnosti i suglasni s objavom imena, ekipe i rezultata (za maloljetne — roditelj ili skrbnik).'); return crtaj(); }   /* 604 */
+    var tijelo = { naziv:f.naziv, brod:f.brod, registracija:f.registracija, telefon:f.telefon, propozicije:true, posadaObavijestena:!!f.posadaObavijestena, clanovi:f.clanovi.map(function(c){ var x = c.bgf ? { bgf:c.bgf, uloga:c.uloga } : { ime:c.ime, uloga:c.uloga }; if (c.maloljetan) { x.maloljetan = true; x.skrbnik = c.skrbnik || ''; } return x; }) };
     Z.salje = true; crtaj();
     var put = Z.uredi && p ? api('/api/tournaments/' + (t.tid || p.turnir.id) + '/prijava/' + p.id, { method:'PUT', body:JSON.stringify(tijelo) }) : api('/api/tournaments/' + t.tid + '/prijava', { method:'POST', body:JSON.stringify(tijelo) });
     put.then(function(){ Z.salje = false; Z.uredi = false; Z.f = { naziv:'', brod:'', registracija:'', telefon:'', propozicije:false, clanovi:[] }; Z.moje = null; ucitajMoje(); }, function(er){ Z.salje = false; Z.greska = er.message;
@@ -4601,6 +4603,70 @@ var REG;
     }).catch(function(){});
   }
   setTimeout(provjeriVerziju, 4000); setInterval(provjeriVerziju, 6 * 3600000);
+})();
+</script>
+
+<script>
+/* ===== 604 · PRIVOLE (GDPR): roditelj za mlađe od 16, ponovno prihvaćanje nove verzije, povlačenje, povijest ===== */
+(function(){ 'use strict';
+  var PR = window.PRAVO || {};
+  var e_ = PR.e || function(x){ return String(x == null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  var NOVO = {
+    'Za mlađe od 16 godina privolu daje roditelj ili skrbnik.':['For under-16s consent is given by a parent or guardian.','Für unter 16-Jährige gibt ein Elternteil oder Vormund die Zustimmung.','Per i minori di 16 anni il consenso è dato da un genitore o tutore.'],
+    'Roditelj ili skrbnik (ime i prezime)':['Parent or guardian (full name)','Elternteil oder Vormund (Name)','Genitore o tutore (nome e cognome)'],
+    'Kao roditelj/skrbnik dajem privolu za registraciju i obradu podataka prema pravilima privatnosti.':['As parent/guardian I consent to the registration and data processing under the privacy policy.','Als Elternteil/Vormund stimme ich der Registrierung und Datenverarbeitung gemäß Datenschutz zu.','Come genitore/tutore acconsento alla registrazione e al trattamento dei dati secondo la privacy.'],
+    'Svi članovi posade upoznati su s pravilima privatnosti i suglasni s objavom imena, ekipe i rezultata (za maloljetne — roditelj ili skrbnik).':['All crew members are informed of the privacy policy and agree to publication of name, team and results (for minors — parent or guardian).','Alle Crewmitglieder kennen den Datenschutz und sind mit der Veröffentlichung von Name, Team und Ergebnissen einverstanden (bei Minderjährigen — Eltern).','Tutti i membri dell’equipaggio conoscono la privacy e acconsentono alla pubblicazione di nome, squadra e risultati (per i minori — genitore o tutore).'],
+    'Pravila privatnosti su promijenjena':['The privacy policy has changed','Die Datenschutzregeln wurden geändert','La privacy è cambiata'], 'Pročitaj novu verziju i potvrdi da je prihvaćaš.':['Read the new version and confirm you accept it.','Lies die neue Version und bestätige sie.','Leggi la nuova versione e conferma di accettarla.'],
+    'Prihvaćam':['I accept','Ich akzeptiere','Accetto'], 'Kasnije':['Later','Später','Più tardi'], '🔒 Privatnost i privole':['🔒 Privacy and consents','🔒 Datenschutz und Einwilligungen','🔒 Privacy e consensi'],
+    'Prihvaćena pravila':['Accepted policy','Akzeptierte Regeln','Regole accettate'], 'verzija':['version','Version','versione'], 'Prikaži moj klub na javnom profilu':['Show my club on my public profile','Meinen Verein im öffentlichen Profil zeigen','Mostra il mio club sul profilo pubblico'],
+    'Obavijesti na ovom uređaju':['Notifications on this device','Mitteilungen auf diesem Gerät','Notifiche su questo dispositivo'], 'Odjavi obavijesti':['Turn off notifications','Mitteilungen abmelden','Disattiva notifiche'], 'uključene':['on','ein','attive'], 'nisu uključene':['off','aus','non attive'],
+    'Privolu dao roditelj/skrbnik':['Consent given by parent/guardian','Zustimmung durch Elternteil/Vormund','Consenso del genitore/tutore'], 'Povijest privola':['Consent history','Verlauf der Einwilligungen','Storico consensi'],
+    'pravila privatnosti':['privacy policy','Datenschutz','privacy'], 'klub javno':['club public','Verein öffentlich','club pubblico'], 'obavijesti':['notifications','Mitteilungen','notifiche'], 'roditelj':['parent','Elternteil','genitore'], 'dano':['given','erteilt','dato'], 'povučeno':['withdrawn','widerrufen','revocato'],
+    'Ime, ekipa i rezultati javni su kao dio natjecanja. Račun i privatne podatke možeš obrisati u Mom profilu (Obriši račun).':['Name, team and results are public as part of the competition. You can delete your account and private data in My profile (Delete account).','Name, Team und Ergebnisse sind als Teil des Wettbewerbs öffentlich. Konto löschen: Mein Profil.','Nome, squadra e risultati sono pubblici come parte della gara. Puoi eliminare l’account nel Mio profilo.'] };
+  Object.keys(NOVO).forEach(function(k){ if (!RJ[k]) RJ[k] = NOVO[k]; }); KLJUCEVI.length = 0; Object.keys(RJ).sort(function(a, b){ return b.length - a.length; }).forEach(function(k){ KLJUCEVI.push(k); });
+  function T(hr){ var j = { en:0, de:1, it:2 }[S.jezik]; var r = NOVO[hr] || RJ[hr]; return (j === undefined || !r) ? hr : (r[j] || hr); }
+  function godine(d){ d = String(d || ''); if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null; var n = new Date(), g = n.getFullYear() - Number(d.slice(0, 4)); var mm = String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0'); if (mm < d.slice(5)) g--; return g; }
+  /* registracija: roditelj */
+  window.RODITELJ_HTML = function(R){ var g = godine(R.d.datumRodjenja); if (g == null || g >= 16) return '';
+    if (!('roditeljIme' in R.d)) R.d.roditeljIme = ''; if (!('roditeljPotvrda' in R.d)) R.d.roditeljPotvrda = false;
+    return '<div class="dokaz" style="background:#eff6ff;border-color:#bfdbfe;color:#1e3a8a;display:block;margin:8px 0"><b>👪 ' + T('Za mlađe od 16 godina privolu daje roditelj ili skrbnik.') + '</b>'
+      + '<input class="polje" data-r="roditeljIme" value="' + e_(R.d.roditeljIme) + '" placeholder="' + T('Roditelj ili skrbnik (ime i prezime)') + '" style="margin-top:8px">'
+      + '<label class="kvac" style="align-items:flex-start;margin-top:8px"><input type="checkbox" data-r="roditeljPotvrda"' + (R.d.roditeljPotvrda ? ' checked' : '') + '> <span>' + T('Kao roditelj/skrbnik dajem privolu za registraciju i obradu podataka prema pravilima privatnosti.') + '</span></label></div>'; };
+  document.addEventListener('change', function(ev){ var el = ev.target; if (el.dataset && el.dataset.r === 'datumRodjenja' && S.v === 'reg') setTimeout(crtaj, 0); if (el.dataset && el.dataset.r === 'roditeljPotvrda' && window.R_REG) {} });
+  /* privole: stanje, ponovno prihvaćanje, povlačenje */
+  var P = { d:null, salje:false, pitano:false };
+  function ucitaj(){ if (P.salje || !(PR.imaSesiju && PR.imaSesiju()) || !PR.api) return; P.salje = true;
+    PR.api('/api/me/privola').then(function(d){ P.salje = false; P.d = d; if (d.trebaPonovno && !P.pitano) pitaj(); if (LIST && LIST.k === 'privola') crtaj(); }, function(){ P.salje = false; }); }
+  function pitaj(){ if (document.getElementById('privolaNova')) return; P.pitano = true;
+    var d = document.createElement('div'); d.id = 'privolaNova'; d.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(7,26,45,.72);display:flex;align-items:flex-end;justify-content:center';
+    d.innerHTML = '<div style="background:#fff;color:#071A2D;border-radius:20px 20px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px));max-width:560px;width:100%"><div style="font-size:30px">🔒</div><b style="font-size:20px;display:block;margin:6px 0">' + T('Pravila privatnosti su promijenjena') + '</b><p style="margin:0 0 12px">' + T('Pročitaj novu verziju i potvrdi da je prihvaćaš.') + ' <a href="privatnost.html" target="_blank" rel="noopener">' + T('Pravila privatnosti') + ' ↗</a> (' + T('verzija') + ' ' + e_(P.d && P.d.aktualna || '') + ')</p>'
+      + '<button data-pvda style="width:100%;padding:15px;border:0;border-radius:12px;background:#0456E8;color:#fff;font-weight:800;font-size:16px">' + T('Prihvaćam') + '</button><button data-pvne style="width:100%;margin-top:8px;padding:12px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;font-weight:700">' + T('Kasnije') + '</button></div>';
+    document.body.appendChild(d);
+    d.addEventListener('click', function(ev){ if (ev.target.closest('[data-pvda]')) { PR.api('/api/me/privola', { method:'POST', body:JSON.stringify({ prihvacam:true }) }).then(function(x){ P.d = x; d.remove(); }, function(er){ alert(er.message); }); } else if (ev.target.closest('[data-pvne]')) d.remove(); }); }
+  setTimeout(ucitaj, 3000); setInterval(function(){ if (!P.d) ucitaj(); }, 30000);
+  var V = { pravila:'pravila privatnosti', klub_javno:'klub javno', obavijesti:'obavijesti', roditelj:'roditelj' };
+  window.PRIVOLA = { list: function(){ var d = P.d; if (!d) { ucitaj(); return '<div class="rucka"></div><b style="font-size:20px">' + T('🔒 Privatnost i privole') + '</b><p class="opis">' + T('Učitavam…') + '</p>'; }
+    var dt = function(x){ if (!x) return '—'; var t = new Date(x); return t.getDate() + '. ' + (t.getMonth() + 1) + '. ' + t.getFullYear() + '.'; };
+    return '<div class="rucka"></div><b style="font-size:20px">' + T('🔒 Privatnost i privole') + '</b>'
+      + '<div class="info" style="margin-top:10px"><div><b>' + T('Prihvaćena pravila') + '</b><span>' + T('verzija') + ' ' + e_(d.prihvacena.verzija || '—') + ' · ' + dt(d.prihvacena.kada) + (d.trebaPonovno ? ' · <button class="zvono" data-pvprihvati>' + T('Prihvaćam') + ' ' + e_(d.aktualna) + '</button>' : ' ✓') + '</span></div>'
+      + '<div><b>' + T('Prikaži moj klub na javnom profilu') + '</b><span><label class="kvac" style="margin:0"><input type="checkbox" data-pvklub' + (d.klubJavno ? ' checked' : '') + '></label></span></div>'
+      + '<div><b>' + T('Obavijesti na ovom uređaju') + '</b><span>' + (d.obavijesti ? T('uključene') + ' · <button class="zvono" data-pvobav>' + T('Odjavi obavijesti') + '</button>' : T('nisu uključene')) + '</span></div>'
+      + (d.roditelj ? '<div><b>' + T('Privolu dao roditelj/skrbnik') + '</b><span data-bezprijevoda>' + e_(d.roditelj.ime) + ' · ' + dt(d.roditelj.kada) + '</span></div>' : '')
+      + '<div><a href="privatnost.html" target="_blank" rel="noopener" style="display:contents"><b>' + T('Pravila privatnosti') + '</b><span>↗</span></a></div></div>'
+      + '<p class="opis">' + T('Ime, ekipa i rezultati javni su kao dio natjecanja. Račun i privatne podatke možeš obrisati u Mom profilu (Obriši račun).') + '</p>'
+      + (d.povijest.length ? '<div class="odj">' + T('Povijest privola') + '</div>' + d.povijest.map(function(x){ return '<div class="redak"><div><b>' + T(V[x.vrsta] || x.vrsta) + ' · ' + T(x.dano ? 'dano' : 'povučeno') + '</b><small>' + dt(x.kada) + (x.verzija ? ' · ' + T('verzija') + ' ' + e_(x.verzija) : '') + '</small></div></div>'; }).join('') : ''); } };
+  document.addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-privola],[data-pvprihvati],[data-pvobav]'); if (!b) return; ev.preventDefault(); ev.stopPropagation();
+    if (b.hasAttribute('data-privola')) { LIST = { k:'privola' }; P.d = null; crtaj(); return; }
+    var tijelo = b.hasAttribute('data-pvprihvati') ? { prihvacam:true } : { obavijesti:false };
+    PR.api('/api/me/privola', { method:'POST', body:JSON.stringify(tijelo) }).then(function(x){ P.d = x; crtaj(); }, function(er){ alert(er.message); });
+  }, true);
+  document.addEventListener('change', function(ev){ var el = ev.target; if (!el.hasAttribute || !el.hasAttribute('data-pvklub')) return;
+    PR.api('/api/me/privola', { method:'POST', body:JSON.stringify({ klubJavno:el.checked }) }).then(function(x){ P.d = x; crtaj(); }, function(er){ alert(er.message); }); });
+  /* redak u Mom profilu */
+  if (window.REG && REG.profil) { var sp = REG.profil; REG.profil = function(){ var h = sp(); if (h.indexOf('data-privola') >= 0) return h;
+    var red = '<div data-privola style="cursor:pointer"><b>' + T('🔒 Privatnost i privole') + '</b><span>' + (P.d && P.d.trebaPonovno ? '⚠ ' : '') + '›</span></div>';
+    var i = h.indexOf('<div data-kartica'); if (i < 0) i = h.indexOf('<div data-josb='); if (i < 0) return h; return h.slice(0, i) + red + h.slice(i); }; }
 })();
 </script>
 
