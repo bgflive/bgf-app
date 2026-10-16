@@ -485,7 +485,7 @@ body.tmmod .uz{color:#0456E8!important}
 .kkoraci span.cek{background:#fef3c7;color:#92400e}
 .info .brzo, main > .brzo{margin:0 0 12px}
 /* 505 · oznaka verzije (da se vidi koja je verzija na mobitelu) */
-body::after{content:'v601';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
+body::after{content:'v602';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
 /* 515 · stanje ribe bojom ruba (Nikola 13.10.) */
 .ulov.rub-zeleno{border-left:5px solid #16a34a;border-radius:0 12px 12px 0}
 .ulov.rub-plavo{border-left:5px solid #2563eb;border-radius:0 12px 12px 0}
@@ -761,7 +761,7 @@ const P = {
   <div class="jadran" style="background:none">${kartaSvg()}</div>
   <div class="legenda"><span><i style="background:#EF4444"></i>uživo</span><span><i style="background:#0456E8"></i>${S.kg === 'Sve godine' ? 'turniri' : 'turniri ' + S.kg}</span>${S.kg !== 'Sve godine' ? '<span><i style="background:#b8c7d8"></i>arhiva</span>' : ''}<span>veća točka = više turnira</span></div>
   ${S.sezona ? `<div class="odj" style="margin-top:16px"><span class="tocka"></span>UŽIVO SADA (${TURNIRI.filter(t => t.st === 'uzivo').length})</div><p class="opis">Turniri koji upravo traju — uvijek na vrhu.</p>${TURNIRI.filter(t => t.st === 'uzivo').map(kart).join('')}` : `<div class="odj" style="margin-top:16px">⏭ SLJEDEĆI TURNIR</div><p class="opis">${JV() ? JAVNO.sezonaOpis : 'Sezona počinje za 37 dana.'}</p>${(x => x ? kart(x) : '')(TURNIRI.find(t => t.st === 'prijave' || t.st === 'uskoro'))}`}
-    <div class="odj">🗓 USKORO</div><p class="opis">Otvorene prijave i nadolazeći turniri.</p>${TURNIRI.filter(t => t.st === 'prijave' || t.st === 'uskoro').map(kart).join('') || '<p class="opis">Trenutno nema najavljenih turnira.</p>'}
+    <div class="odj">🗓 USKORO</div><p class="opis">Otvorene prijave i nadolazeći turniri.</p>${(function(){ var sljed = TURNIRI.some(t => t.st === 'uzivo') ? null : TURNIRI.find(t => t.st === 'prijave' || t.st === 'uskoro'); var L = TURNIRI.filter(t => (t.st === 'prijave' || t.st === 'uskoro') && t !== sljed); return L.map(kart).join('') || (sljed ? '<p class="opis">Ostali turniri još nisu najavljeni.</p>' : '<p class="opis">Trenutno nema najavljenih turnira.</p>'); })()}
     <div class="odj">🏆 ZAVRŠENI</div><p class="opis">Rezultati i arhiva od 2011.</p>${TURNIRI.filter(t => t.st === 'zavrsen').slice(0, 2).map(kart).join('') || '<p class="opis">Još nema završenih turnira.</p>'}
     <button class="plavi" data-v="turniri" style="background:#eef4ff;color:#0456E8!important">Svi turniri →</button>
     <div class="prikaz"${JV() ? ' style="display:none"' : ''}><span style="color:#8a97a8;font-size:12px;align-self:center">prikaz:</span><button data-sez="1" aria-pressed="${S.sezona}">u sezoni</button><button data-sez="0" aria-pressed="${!S.sezona}">izvan sezone</button><button data-prijava-demo aria-pressed="${S.prijavljen}">${S.prijavljen ? 'prijavljen ✓' : 'prijavi se'}</button></div></main>`,
@@ -774,7 +774,7 @@ const P = {
     const sad = {
       pregled: `<div class="naslovna">${slika(t)}</div><main style="--tb:${B}"><h1 style="margin:0 0 4px;font-size:23px;line-height:1.2">${t.n}</h1>${bodZnak(t)}
         ${t.st !== 'uzivo' ? `<a class="boardtipka" href="https://${BOARD[t.id] || t.id}.bgf.live" target="_blank" rel="noopener"><span>📺</span><div><b>${t.st === 'zavrsen' ? 'Otvori board turnira' : 'Board turnira'}</b><small>${BOARD[t.id] || t.id}.bgf.live · ${t.st === 'zavrsen' ? 'konačni poredak, tijek, karta' : 'prijavljene ekipe, odbrojavanje'}</small></div><span class="s">↗</span></a>` : ''}
-        <div class="podaci"><b>RIBOLOV</b><span>${t.rib}</span><b>PRIJAVE</b><span>${!t.prij ? '—' : t.st === 'prijave' ? 'zatvaraju ' + t.prij.split('– ')[1] : t.prij}</span><b>MJESTO</b><span>${t.mj}</span><b>PRAVILA</b><span>${t.v === 'DP' ? 'Državno · plasmanski bodovi' : 'Croatia OPEN'}</span><b>ORGANIZATOR</b><span>${t.org}</span></div>
+        <div class="podaci"><b>RIBOLOV</b><span>${t.rib}</span><b>PRIJAVE</b><span>${t.st === 'zavrsen' ? 'zatvorene · turnir završen' : t.st === 'uzivo' ? 'zatvorene · turnir u tijeku' : !t.prij ? (t.st === 'prijave' ? 'otvorene' : 'još nisu otvorene') : t.st === 'prijave' ? 'otvorene do ' + t.prij.split('– ')[1] : t.prij}</span><b>MJESTO</b><span>${t.mj}</span><b>PRAVILA</b><span>${t.v === 'DP' ? 'Državno · plasmanski bodovi' : 'Croatia OPEN'}</span><b>ORGANIZATOR</b><span>${t.org ? `<button class="zvono" data-jklub="${String(t.org).replace(/"/g, '&quot;')}" style="text-align:left">${t.org} →</button>` : '—'}</span></div>
         ${t.st !== 'zavrsen' && !JV() ? `<button class="pogodi" data-pogodi><span>🎯</span><div><b>Pogodi pobjednika</b><small>${POGODAK ? 'tvoj izbor: ' + POGODAK : 'bez uplata · nagrada sponzora'}</small></div><i>›</i></button>` : ''}
         ${t.st === 'zavrsen' ? `<div class="noga" style="margin:12px 0 6px;gap:8px;justify-content:flex-start"><button class="zvono" data-dijeli="${t.id}">↗ Podijeli</button></div>` : `<div class="noga" style="margin:12px 0 6px;gap:8px;justify-content:flex-start;flex-wrap:wrap"><button class="prati ${S.prati.has(t.id) ? 'on' : ''}" style="${S.prati.has(t.id) ? '' : 'background:' + B}" data-prati="${t.id}">${S.prati.has(t.id) ? '✓ Pratiš' : '＋ Prati'}</button><button class="zvono ${S.obav.has(t.id) ? 'on' : ''}" data-obav="${t.id}">${S.obav.has(t.id) ? '🔔 Obavijesti uključene' : '🔕 Obavijesti'}</button><button class="zvono" data-dijeli="${t.id}">↗ Podijeli</button></div>`}
         ${S.obav.has(t.id) && t.st !== 'zavrsen' ? `<p class="opis">Dobivaš obavijest na mobitel: ulov, novo vodstvo, kraj dana. Dodir na obavijest otvara board uživo.</p>` : ''}
@@ -1247,9 +1247,7 @@ function listHtml(){
   if (LIST.k === 'tm-brisi') return `<div class="rucka"></div><b style="font-size:20px;color:#b91c1c">Obriši račun?</b><p class="opis">Brišu se prijava i privatni podaci. Nastupi ostaju u arhivi kao povijesni zapis.</p><div class="pedno"><button class="sir" data-zatvori>Odustani</button><button class="plavi" style="background:#b91c1c" data-zatvori>Obriši</button></div>`;
   if (LIST.k === 'bod') { const t = TURNIRI.find(x => x.id === LIST.i) || {}; const dp = t.v === 'DP'; const b = bodTip(t);
     return `<div class="rucka"></div><b style="font-size:20px">${b.ik} ${b.n}</b><p class="opis">${b.o}. Bodovanje postavlja i zaključava sudac; ista tablica računa board.</p>
-      ${dp ? `<div class="info"><div><b>1. mjesto dana</b><span>N bodova (N = broj ekipa)</span></div><div><b>2. mjesto</b><span>N − 1</span></div><div><b>…</b><span>…</span></div><div><b>Bez ulova</b><span>pola mogućih</span></div><div><b>Izjednačenje</b><span>po pravilima saveza (t. 10.6)</span></div></div>`
-           : `<div class="info"><div><b>Plavoperajna tuna — puštena</b><span>700</span></div><div><b>Plavoperajna tuna — na brodu</b><span>10 bodova / kg</span></div><div><b>Iglan — pušten</b><span>900</span></div><div><b>Lampuga, luc</b><span>po kg</span></div><div><b>Najmanja težina</b><span>ispod nje bez bodova</span></div></div>`}
-      <p class="opis">🔒 Zaključano · sudac Tonći Luketa · verzija 2</p><button class="sir">📄 Propozicije (PDF)</button>`; }
+      ${dp ? `<div class="info"><div><b>Dnevni plasman</b><span>po zbroju bodova ulova toga dana</span></div><div><b>1. mjesto dana</b><span>1 plasmanski bod (PB)</span></div><div><b>2. mjesto dana</b><span>2 PB, 3. mjesto 3 PB …</span></div><div><b>Izjednačeni</b><span>dijele prosjek mjesta (npr. 2. i 3. → 2,5 PB)</span></div><div><b>Bez ulova</b><span>dijele preostala mjesta (prosjek)</span></div><div><b>Diskvalifikacija za dan</b><span>PB = broj ekipa</span></div><div><b>Pobjednik</b><span>najmanji zbroj PB kroz sve dane</span></div><div><b>Izjednačenje na kraju</b><span>po pravilima saveza (t. 10.6)</span></div></div>` : (window.BODOVI_OPEN ? BODOVI_OPEN(t) : '')}<button class="sir" data-pov="prop">📄 Propozicije turnira</button>`; }
   if (LIST.k === 'ulst') { const h = TM.povijest[LIST.i]; if (!h) return '';
     const sv = ['poslano sucu','sudac primio','čeka vaganje','priznato'];
     return `<div class="rucka"></div><div class="ulhdr" style="border-color:${BB[h.tip]}">${bico(h.tip)}<div><b>${h.t}</b><small>Dan 2 · ${h.v}</small></div></div>
@@ -3266,7 +3264,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
       if (!ima) h += '<p class="opis">Još nema događaja.</p>';
       return '<main style="--tb:' + B + ';padding-top:0">' + h + '</main>';
     }
-    if (tab === 'karta') return '<main>' + h + karta(L) + '</main>';
+    if (tab === 'karta') return '<main>' + h + (window.KARTA_T ? KARTA_T(L, t) : karta(L)) + '</main>';
     return J.privremeno(t);
   };
   RJ['DAN 1'] = RJ['DAN 1'] || ['DAY 1','TAG 1','GIORNO 1'];
@@ -4383,11 +4381,16 @@ var REG;
   function ucitajStat(){ if (ST.salje) return; ST.salje = true;
     var fin = TURNIRI.filter(function(t){ return t.pravi && t.st === 'zavrsen' && t.vrstaRaw !== 'pilot'; });   /* 588: pilot izdvojen iz statistike */
     Promise.all(fin.map(function(t){ return fetch((PR.BACKEND || 'https://bgf-live-backend.vercel.app') + '/api/public/' + encodeURIComponent(t.id) + '/leaderboard').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }).then(function(d){ return { t:t, d:d }; }); }))
-      .then(function(L){ ST.salje = false; ST.d = L.filter(function(x){ return x.d; }); if (S.v === 'stat') crtaj(); });
+            .then(function(L){ ST.salje = false; ST.svjeze = true; ST.d = L.filter(function(x){ return x.d; });
+        /* 602: pamti za idući put (samo što treba statistici) */
+        try { localStorage.setItem('bgf-stat', JSON.stringify(ST.d.map(function(x){ return { id:x.t.id, d:{ stats:x.d.stats ? { totalCatches:x.d.stats.totalCatches, biggest:x.d.stats.biggest } : null, catches:(x.d.catches || []).map(function(c){ return { outcome:c.outcome, species:c.species }; }), leaderboard:(x.d.leaderboard || []).slice(0, 1).map(function(e){ return { name:e.name }; }).concat(Array((x.d.leaderboard || []).length > 1 ? x.d.leaderboard.length - 1 : 0).fill({})) } }; }))); } catch(e) {}
+        if (S.v === 'stat') crtaj(); });
   }
   window.STATJ = { ekran: function(){
     var h = vrh(T('Statistika'), false) + '<main>';
-    if (!ST.d) { ucitajStat(); return h + '<p class="opis">' + T('Učitavam statistiku…') + '</p></main>'; }
+        if (!ST.d) { try { var zap = JSON.parse(localStorage.getItem('bgf-stat') || 'null'); if (zap && zap.length) ST.d = zap.map(function(x){ return { t:TURNIRI.find(function(t){ return t.id === x.id; }), d:x.d }; }).filter(function(x){ return x.t; }); } catch(e) {} }
+    if (!ST.svjeze && !ST.salje) ucitajStat();   /* 602: zapamćeno odmah, svježe u pozadini */
+    if (!ST.d || !ST.d.length && ST.salje) return h + '<p class="opis">' + T('Učitavam statistiku…') + '</p></main>';
     var god = String(new Date().getFullYear()); var L = ST.d.filter(function(x){ return ST.nacin === 'ukupno' || String(x.t.god) === god; });
     h += '<div class="cipovi"><button data-statn="godina" aria-pressed="' + (ST.nacin === 'godina') + '">' + T('Godina') + ' ' + god + '</button><button data-statn="ukupno" aria-pressed="' + (ST.nacin === 'ukupno') + '">' + T('Ukupno') + '</button></div>';
     if (!L.length) return h + '<p class="opis">' + T('Još nema završenih turnira.') + '</p><p class="opis">' + T('Statistika se računa iz završenih turnira u sustavu; arhiva od 2011. dolazi nakon unosa.') + '</p></main>';
@@ -4446,6 +4449,110 @@ var REG;
 (function(){ var N = { 'organiziranih turnira':['tournaments organised','organisierte Turniere','tornei organizzati'], 'članova (javno)':['members (public)','Mitglieder (öffentlich)','soci (pubblici)'], 'ORGANIZIRANI TURNIRI':['ORGANISED TOURNAMENTS','ORGANISIERTE TURNIERE','TORNEI ORGANIZZATI'],
   'EKIPE KLUBA':['CLUB TEAMS','TEAMS DES VEREINS','SQUADRE DEL CLUB'], 'ČLANOVI':['MEMBERS','MITGLIEDER','SOCI'], 'KLUBOVI':['CLUBS','VEREINE','CLUB'], 'Članovi se prikazuju samo uz njihovu privolu.':['Members are shown only with their consent.','Mitglieder werden nur mit ihrer Zustimmung angezeigt.','I soci sono mostrati solo con il loro consenso.'], 'Klub nije pronađen.':['Club not found.','Verein nicht gefunden.','Club non trovato.'] };
   Object.keys(N).forEach(function(k){ if (!RJ[k]) RJ[k] = N[k]; }); KLJUCEVI.length = 0; Object.keys(RJ).sort(function(a, b){ return b.length - a.length; }).forEach(function(k){ KLJUCEVI.push(k); }); })();
+</script>
+
+<script>
+/* ===== 602 · KARTA S RELJEFOM, ULOVI, GPX; PROPOZICIJE S PRAVIM BODOVANJEM; BRŽA STATISTIKA ===== */
+(function(){ 'use strict';
+  var PR = window.PRAVO || {}, J = window.JAVNO;
+  var e_ = PR.e || function(x){ return String(x == null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+  var vrstaT = function(n){ return (PR.vrstaT ? PR.vrstaT(n) : n) || ''; };
+  var NOVO = { 'zatvorene · turnir završen':['closed · tournament finished','geschlossen · Turnier beendet','chiuse · torneo concluso'], 'zatvorene · turnir u tijeku':['closed · tournament in progress','geschlossen · Turnier läuft','chiuse · torneo in corso'], 'još nisu otvorene':['not open yet','noch nicht geöffnet','non ancora aperte'], 'otvorene do':['open until','offen bis','aperte fino al'], 'otvorene':['open','offen','aperte'],
+    'Otpalo':['Lost','Verloren','Perso'], 'Pušteno':['Released','Freigelassen','Rilasciato'], 'Na brodu':['Boated','An Bord','A bordo'], '⬇ GPX za plotere (zona i ulovi)':['⬇ GPX for plotters (zone and catches)','⬇ GPX für Plotter (Zone und Fänge)','⬇ GPX per plotter (zona e catture)'], 'ULOVI NA KARTI':['CATCHES ON THE MAP','FÄNGE AUF DER KARTE','CATTURE SULLA MAPPA'],
+    'Pozicije ulova javne su nakon zaključanog dana.':['Catch positions become public after the day is locked.','Fangpositionen werden nach Tagesabschluss öffentlich.','Le posizioni diventano pubbliche dopo la chiusura del giorno.'], 'Zabranjena zona':['Prohibited zone','Sperrzone','Zona vietata'], 'Ribolovna zona':['Fishing zone','Fangzone','Zona di pesca'],
+    'Dnevni plasman':['Daily placement','Tagesplatzierung','Classifica giornaliera'], 'po zbroju bodova ulova toga dana':['by the sum of catch points that day','nach Summe der Fangpunkte des Tages','per somma dei punti del giorno'], '1 plasmanski bod (PB)':['1 placement point (PP)','1 Platzierungspunkt','1 punto piazzamento'], '1. mjesto dana':['1st place of the day','1. Platz des Tages','1° posto del giorno'], '2. mjesto dana':['2nd place of the day','2. Platz des Tages','2° posto del giorno'], '2 PB, 3. mjesto 3 PB …':['2 PP, 3rd place 3 PP …','2 PP, 3. Platz 3 PP …','2 PP, 3° posto 3 PP …'],
+    'Izjednačeni':['Tied','Gleichstand','Pari merito'], 'dijele prosjek mjesta (npr. 2. i 3. → 2,5 PB)':['share the average place (e.g. 2nd and 3rd → 2.5 PP)','teilen den Durchschnitt (z. B. 2. und 3. → 2,5)','dividono la media (es. 2° e 3° → 2,5)'], 'dijele preostala mjesta (prosjek)':['share the remaining places (average)','teilen die restlichen Plätze (Durchschnitt)','dividono i posti restanti (media)'],
+    'Diskvalifikacija za dan':['Disqualified for the day','Tagesdisqualifikation','Squalifica giornaliera'], 'PB = broj ekipa':['PP = number of teams','PP = Anzahl Teams','PP = numero squadre'], 'Pobjednik':['Winner','Sieger','Vincitore'], 'najmanji zbroj PB kroz sve dane':['lowest PP total over all days','niedrigste PP-Summe über alle Tage','somma PP più bassa su tutti i giorni'], 'Izjednačenje na kraju':['Final tie-break','Endgleichstand','Parità finale'],
+    '📄 Propozicije turnira':['📄 Tournament rules','📄 Turnierregeln','📄 Regolamento del torneo'], 'puštena':['released','freigelassen','rilasciato'], 'na brodu':['boated','an Bord','a bordo'], 'bod/kg':['pts/kg','Pkt/kg','pt/kg'], 'najmanje':['minimum','mindestens','minimo'], 'ne boduje se':['not scored','wird nicht gewertet','non conta'] };
+  Object.keys(NOVO).forEach(function(k){ if (!RJ[k]) RJ[k] = NOVO[k]; }); KLJUCEVI.length = 0; Object.keys(RJ).sort(function(a, b){ return b.length - a.length; }).forEach(function(k){ KLJUCEVI.push(k); });
+  function T(hr){ var j = { en:0, de:1, it:2 }[S.jezik]; var r = NOVO[hr] || RJ[hr]; return (j === undefined || !r) ? hr : (r[j] || hr); }
+  var broj = function(n){ return String(Math.round(n * 100) / 100).replace('.', ','); };
+
+  /* ---------- bodovanje vrste (iz pravila turnira) ---------- */
+  function bodVrste(r){ var d = [];
+    if (r.minMeasure) d.push(T('najmanje') + ' ' + String(r.minMeasure).trim());
+    if (r.canRelease && Number(r.releasePts) > 0) d.push(T('puštena') + ' ' + broj(r.releasePts) + ' ' + T('bod'));
+    if (r.canBoat) { if (r.boatMode === 'tier' && (r.tiers || []).length) d.push(T('na brodu') + ': ' + r.tiers.map(function(x){ return broj(x.minKg) + (x.maxKg != null ? '–' + broj(x.maxKg) : '+') + ' kg ' + broj(x.ptsPerKg) + ' ' + T('bod/kg'); }).join(' · '));
+      else if (r.boatMode === 'perkg' || r.boatMode === 'per_kg') d.push(T('na brodu') + ' ' + broj(r.boatPts) + ' ' + T('bod/kg'));
+      else if (Number(r.boatPts) > 0) d.push(T('na brodu') + ' ' + broj(r.boatPts) + ' ' + T('bod')); }
+    if (!d.length || (!(r.canRelease && Number(r.releasePts) > 0) && !r.canBoat)) d.push(T('ne boduje se'));
+    return d.join(' · '); }
+  window.BOD_VRSTE = bodVrste;
+  window.BODOVI_OPEN = function(t){ var L = J && J.podaci ? J.podaci(t) : null; var R = (L && L.rules) || [];
+    if (!R.length) return '<p class="opis">' + T('Učitavam…') + '</p>';
+    return '<div class="info">' + R.map(function(r){ return '<div style="display:block"><b>' + e_(vrstaT(r.name)) + '</b><span style="display:block;text-align:left;margin-top:2px">' + e_(bodVrste(r)) + '</span></div>'; }).join('') + '</div>'; };
+  /* propozicije (573) koriste istu funkciju */
+  if (window.PROPOZ) { var stP = window.PROPOZ; window.PROPOZ = function(t){ var L = J && J.podaci ? J.podaci(t) : null; if (!L || !(L.rules || []).length) return stP(t);
+    var h = '<div class="rucka"></div><b style="font-size:20px">' + T('📄 PROPOZICIJE') + '</b><p class="opis" data-bezprijevoda>' + e_(t.n || '') + '</p><div class="odj">' + T('Vrsta') + '</div>'
+      + L.rules.map(function(r){ return '<div class="vrsta"><div><b>' + e_(vrstaT(r.name)) + '</b><i>' + e_(bodVrste(r)) + '</i></div></div>'; }).join('');
+    var H = L.hours || []; if (H.length) h += '<div class="odj">' + T('🕘 SATNICA') + '</div><div class="podaci">' + H.map(function(x){ return '<b>' + T('Dan') + ' ' + x.day + '</b><span>' + e_(x.start) + '–' + e_(x.end) + '</span>'; }).join('') + '</div>';
+    return h; }; }
+
+  /* ---------- karta s reljefom ---------- */
+  var BOJA = { pust:'#2f8fe6', brod:'#f59e0b', otp:'#ef4444' };
+  function tipU(c){ return c.outcome === 'released' ? 'pust' : c.outcome === 'lost' ? 'otp' : 'brod'; }
+  var VIEW = {}, KM = null;
+  function ucitajLeaflet(){ if (window.L && window.L.map) return Promise.resolve();
+    if (!document.querySelector('link[data-leaf]')) { var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; l.setAttribute('data-leaf', '1'); document.head.appendChild(l); }
+    return new Promise(function(da, ne){ var sc = document.createElement('script'); sc.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'; sc.onload = da; sc.onerror = ne; document.head.appendChild(sc); }); }
+  function podaciKarte(L){ var Tt = L.tournament || {}; var ok = function(a){ return Array.isArray(a) ? a.map(function(p){ return [Number(p && p.lat), Number(p && p.lon)]; }).filter(function(p){ return isFinite(p[0]) && isFinite(p[1]); }) : []; };
+    var Z = ok(Tt.zone); if (Z.length < 3) Z = ok(Tt.zoneDisplay);
+    var U = (L.catches || []).filter(function(c){ return c.gpsLat != null && c.gpsLon != null; });
+    return { Z:Z, U:U, F:Tt.forbiddenZones || [] }; }
+  window.KARTA_T = function(L, t){
+    var K = podaciKarte(L);
+    setTimeout(function(){ crtajKartu(L, t); }, 30);
+    var h = '<div id="jKarta" style="height:380px;border-radius:16px;overflow:hidden;background:#0b3a66"></div>'
+      + '<div class="blegenda" style="margin-top:8px">' + [['pust','Pušteno'],['brod','Na brodu'],['otp','Otpalo']].map(function(x){ return '<span><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:' + BOJA[x[0]] + ';border:2px solid #fff;box-shadow:0 0 0 1px #94a3b8;margin-right:6px;vertical-align:-1px"></i>' + T(x[1]) + '</span>'; }).join('') + '</div>'
+      + '<p class="opis">' + T('Pozicije ulova javne su nakon zaključanog dana.') + '</p>';
+    if (K.Z.length >= 3 || K.U.length) h += '<button class="sir" data-gpx style="margin:4px 0 10px">' + T('⬇ GPX za plotere (zona i ulovi)') + '</button>';
+    if (K.U.length) h += '<div class="odj">📍 ' + T('ULOVI NA KARTI') + ' (' + K.U.length + ')</div>' + K.U.slice().sort(function(a, b){ return (b.day - a.day) || String(b.time).localeCompare(String(a.time)); }).map(function(c){ var i = L.catches.indexOf(c);
+      return '<button class="redak" data-kfok="' + i + '"><span class="av" style="background:' + BOJA[tipU(c)] + ';color:#fff">' + (tipU(c) === 'pust' ? '↺' : tipU(c) === 'otp' ? '✕' : '⚓') + '</span><div style="min-width:0"><b data-bezprijevoda>' + e_(c.teamName || '') + (c.compNumber != null ? ' #' + e_(c.compNumber) : '') + '</b><small>' + T('Dan') + ' ' + c.day + ' · ' + e_(c.time) + ' · ' + e_(vrstaT(c.species)) + (c.weightKg ? ' · ' + broj(c.weightKg) + ' kg' : '') + (c.angler ? ' · <span data-bezprijevoda>' + e_(c.angler) + '</span>' : '') + '</small></div><span class="bod">' + (c.points ? broj(c.points) : '') + '</span></button>'; }).join('');
+    return h; };
+  function crtajKartu(L, t){
+    var el = document.getElementById('jKarta'); if (!el) return;
+    ucitajLeaflet().then(function(){
+      el = document.getElementById('jKarta'); if (!el || el._leaflet_id) return;
+      var K = podaciKarte(L);
+      var m = L_map(el); KM = { m:m, L:L, t:t };
+      /* reljef mora (Esri Ocean) + nazivi; OSM kao rezerva */
+      var ocean = window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 13, attribution: 'Esri · GEBCO · NOAA' });
+      var nazivi = window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 13 });
+      var osm = window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' });
+      ocean.addTo(m); nazivi.addTo(m);
+      window.L.control.layers({ 'More (reljef)': ocean, 'Karta (OSM)': osm }, {}, { position:'topright' }).addTo(m);
+      var sve = [];
+      if (K.Z.length >= 3) { window.L.polygon(K.Z, { color:'#5fa8ff', weight:2, fillColor:'#5fa8ff', fillOpacity:.08 }).addTo(m).bindTooltip(T('Ribolovna zona')); K.Z.forEach(function(p){ sve.push(p); }); }
+      K.F.forEach(function(z){ var st = { color:'#DC2626', weight:2, fillColor:'#DC2626', fillOpacity:.18 };
+        if (z.tip === 'poligon' && Array.isArray(z.tocke)) window.L.polygon(z.tocke.map(function(p){ return [p.lat, p.lon]; }), st).addTo(m).bindTooltip('🚫 ' + (z.naziv || T('Zabranjena zona')));
+        else if (isFinite(z.lat)) window.L.circle([z.lat, z.lon], Object.assign({ radius:z.radius_m }, st)).addTo(m).bindTooltip('🚫 ' + (z.naziv || T('Zabranjena zona'))); });
+      KM.mk = {};
+      K.U.forEach(function(c){ var i = L.catches.indexOf(c), ll = [Number(c.gpsLat), Number(c.gpsLon)]; sve.push(ll);
+        KM.mk[i] = window.L.circleMarker(ll, { radius:8, color:'#fff', weight:2, fillColor:BOJA[tipU(c)], fillOpacity:1 }).addTo(m)
+          .bindPopup('<b>' + e_(c.teamName || '') + '</b><br>' + T('Dan') + ' ' + c.day + ' · ' + e_(c.time) + '<br>' + e_(vrstaT(c.species)) + (c.weightKg ? ' · ' + broj(c.weightKg) + ' kg' : '') + (c.points ? '<br>' + broj(c.points) + ' ' + T('bod') : '')); });
+      var v = VIEW[t.id];
+      if (v) m.setView(v.c, v.z); else if (sve.length) m.fitBounds(sve, { padding:[24, 24], maxZoom:12 }); else m.setView([43.0, 16.4], 7);
+      m.on('moveend', function(){ VIEW[t.id] = { c:m.getCenter(), z:m.getZoom() }; });
+      setTimeout(function(){ m.invalidateSize(); }, 150);
+    }).catch(function(){ var e = document.getElementById('jKarta'); if (e) e.innerHTML = '<p class="opis" style="color:#fff;padding:16px">Karta se nije učitala (nema interneta).</p>'; });
+  }
+  function L_map(el){ return window.L.map(el, { zoomControl:true, attributionControl:true }); }
+  document.addEventListener('click', function(ev){
+    var f = ev.target.closest('[data-kfok]'); if (f && KM && KM.mk) { ev.preventDefault(); ev.stopPropagation(); var mk = KM.mk[Number(f.dataset.kfok)]; if (mk) { KM.m.setView(mk.getLatLng(), Math.max(KM.m.getZoom(), 11)); mk.openPopup(); document.getElementById('jKarta').scrollIntoView({ behavior:'smooth', block:'center' }); } return; }
+    var g = ev.target.closest('[data-gpx]'); if (g) { ev.preventDefault(); ev.stopPropagation(); gpx(); }
+  }, true);
+  function gpx(){
+    var t = TURNIRI.find(function(x){ return x.id === S.t; }) || {}; var L = J && J.podaci ? J.podaci(t) : null; if (!L) return;
+    var K = podaciKarte(L), x = function(v){ return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+    var g = '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="BGF.LIVE" xmlns="http://www.topografix.com/GPX/1/1">\n<metadata><name>' + x(t.n) + '</name></metadata>\n';
+    K.U.forEach(function(c){ g += '<wpt lat="' + c.gpsLat + '" lon="' + c.gpsLon + '"><name>' + x((c.teamName || '') + ' · ' + (c.species || '') + ' · D' + c.day + ' ' + (c.time || '')) + '</name><desc>' + x(c.outcome + (c.weightKg ? ' ' + c.weightKg + ' kg' : '')) + '</desc></wpt>\n'; });
+    if (K.Z.length >= 3) g += '<trk><name>' + x(T('Ribolovna zona')) + '</name><trkseg>' + K.Z.concat([K.Z[0]]).map(function(p){ return '<trkpt lat="' + p[0] + '" lon="' + p[1] + '"/>'; }).join('') + '</trkseg></trk>\n';
+    K.F.forEach(function(z){ if (z.tip === 'poligon' && Array.isArray(z.tocke)) g += '<trk><name>' + x('ZABRANJENO: ' + z.naziv) + '</name><trkseg>' + z.tocke.concat([z.tocke[0]]).map(function(p){ return '<trkpt lat="' + p.lat + '" lon="' + p.lon + '"/>'; }).join('') + '</trkseg></trk>\n'; else if (isFinite(z.lat)) g += '<wpt lat="' + z.lat + '" lon="' + z.lon + '"><name>' + x('ZABRANJENO: ' + z.naziv + ' (' + z.radius_m + ' m)') + '</name></wpt>\n'; });
+    g += '</gpx>\n';
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([g], { type:'application/gpx+xml' })); a.download = String(t.n || 'turnir').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase() + '.gpx'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  window.__gpx602 = gpx;
+})();
 </script>
 
 </body>
