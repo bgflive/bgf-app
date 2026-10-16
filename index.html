@@ -485,7 +485,7 @@ body.tmmod .uz{color:#0456E8!important}
 .kkoraci span.cek{background:#fef3c7;color:#92400e}
 .info .brzo, main > .brzo{margin:0 0 12px}
 /* 505 · oznaka verzije (da se vidi koja je verzija na mobitelu) */
-body::after{content:'v583';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
+body::after{content:'v595';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
 /* 515 · stanje ribe bojom ruba (Nikola 13.10.) */
 .ulov.rub-zeleno{border-left:5px solid #16a34a;border-radius:0 12px 12px 0}
 .ulov.rub-plavo{border-left:5px solid #2563eb;border-radius:0 12px 12px 0}
@@ -1526,6 +1526,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
 
   /* ---------- jezik dodataka (v69: hr / en / de / it) ---------- */
   var PREV = {
+    'Zabranjena zona':['Prohibited zone','Sperrzone','Zona vietata'], 'do granice':['to the edge','bis zur Grenze','dal limite'],
     'Drugi član je već javio drukčiji ishod. Sudac odlučuje koji vrijedi.':['Another member already reported a different outcome. The judge decides which one counts.','Ein anderes Mitglied hat bereits ein anderes Ergebnis gemeldet. Der Schiedsrichter entscheidet.','Un altro membro ha già segnalato un esito diverso. Decide il giudice.'],
     'Prijava':['Sign in','Anmelden','Accedi'],
     'Nalog koji si dobio za natjecanje.':['The account you got for the competition.','Das Konto, das du für den Wettbewerb bekommen hast.','L’account ricevuto per la gara.'],
@@ -2576,7 +2577,18 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     var u = uZoni(z.Z, g.lat, g.lon), nm = nmDoGranice(z.Z, g.lat, g.lon);
     return { u:u, nm:nm, st: !u ? 'izvan' : (nm < 0.5 ? 'blizu' : 'u') };
   }
+  /* 594 · K12: zabranjene zone (krug) — upozorenje ekipi na moru */
+  function uZabranjenoj(){ var g = D.gps, Z = trn().forbidden_zones; if (!g || !Array.isArray(Z) || !Z.length) return null; var naj = null;
+    Z.forEach(function(z){ if (z.tip === 'poligon' && Array.isArray(z.tocke)) { if (!naj && uZoni(z.tocke, g.lat, g.lon)) naj = { z:Object.assign({ radius_m:1e12 }, z), d:0, poli:true }; return; }   /* 595: zabranjeno područje */
+      var r = Math.PI / 180, dLa = (z.lat - g.lat) * r, dLo = (z.lon - g.lon) * r, h = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(g.lat * r) * Math.cos(z.lat * r) * Math.sin(dLo / 2) * Math.sin(dLo / 2), d = 2 * 6371000 * Math.asin(Math.sqrt(h));
+      if (d <= z.radius_m + 50 && (!naj || d - z.radius_m < naj.d - naj.z.radius_m)) naj = { z:z, d:d }; });
+    return naj; }
+  P.uZabranjenoj = uZabranjenoj;
   function procijeniUpozorenje(){
+    var zb = P.dan ? uZabranjenoj() : null;
+    if (zb && (!D.zabUpoz || Date.now() - D.zabUpoz > 120000 || D.zabNaziv !== zb.z.naziv)) { D.zabUpoz = Date.now(); D.zabNaziv = zb.z.naziv;
+      tost('🚫 ' + t('Zabranjena zona') + ': ' + zb.z.naziv + (!zb.poli && zb.d > zb.z.radius_m ? ' · ' + Math.round(zb.d - zb.z.radius_m) + ' m ' + t('do granice') : ''), true); try{ navigator.vibrate && navigator.vibrate([600, 200, 600, 200, 600]); }catch(e){} }
+    if (!zb) D.zabNaziv = null;
     var s = stanjeZone(); if (!s || !P.dan) { D.zst = null; return; }
     var prije = D.zst, st = s.st;
     if (prije === 'blizu' && st === 'u' && s.nm < 0.6) st = 'blizu';            // histereza: ne treperi na 0,5
@@ -2984,7 +2996,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     var st = x.status === 'live' ? 'uzivo' : x.status === 'finished' ? 'zavrsen' : (x.prijave ? 'prijave' : 'uskoro');
     return { id:x.subdomain, tid:x.id || null, n:x.name, st:st, img:slikaZa(x), mj:x.location || '', prij:null, rib:raspon(x.from, x.to),
       ek:x.teams || 0, ul:x.catches || 0, kac:x.naStapu || 0, dan:x.currentDay ? 'Dan ' + x.currentDay : '', org:x.organizer || '',
-      v:x.vrsta === 'dp' ? 'DP' : 'OPEN', god:x.year, od:x.from, borba:false, pravi:true, _boja:bojaZa(x) };
+      v:x.vrsta === 'dp' ? 'DP' : x.vrsta === 'pilot' ? 'PILOT' : 'OPEN', vrstaRaw:x.vrsta, god:x.year, od:x.from, borba:false, pravi:true, _boja:bojaZa(x) };
   }
   function bezKvacica(s){ return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, ''); }
   function mjestoKarte(mj){
@@ -3778,7 +3790,14 @@ var REG;
     'ukupno paketa':['packages in total','Pakete gesamt','confezioni totali'], 'nije naručila':['not ordered','nicht bestellt','non ordinato'],
     'Prijave i ždrijeb, liste i obrasci, postavke, izgled boarda, sponzori, korisnici i dnevnik rade u web adminu — i na mobitelu.':['Entries and draw, lists and forms, settings, board layout, sponsors, users and the log are in the web admin — on mobile too.','Anmeldungen und Auslosung, Listen und Formulare, Einstellungen, Board, Sponsoren, Benutzer und Protokoll sind im Web-Admin — auch am Handy.','Iscrizioni e sorteggio, elenchi e moduli, impostazioni, board, sponsor, utenti e registro sono nell’admin web — anche da mobile.'],
     'Otvori web admin ↗':['Open web admin ↗','Web-Admin öffnen ↗','Apri admin web ↗'], 'počinje za':['starts in','beginnt in','inizia tra'], 'dana':['days','Tagen','giorni'],
-    'u tijeku':['in progress','läuft','in corso'], 'nema registracije broda':['no boat registration','keine Bootskennung','manca targa della barca'],
+    'u tijeku':['in progress','läuft','in corso'], 'LISTE ZA EXCEL':['LISTS FOR EXCEL','LISTEN FÜR EXCEL','ELENCHI PER EXCEL'], 'Ekipe i sastavi':['Teams and crews','Teams und Crews','Squadre ed equipaggi'], 'Kontakti kapetana':['Captain contacts','Kapitänskontakte','Contatti capitani'], 'Majice':['T-shirts','T-Shirts','Magliette'], 'Dozvole (provjera)':['Licences (check)','Lizenzen (Prüfung)','Licenze (verifica)'], 'Rezultati':['Results','Ergebnisse','Risultati'], 'OBAVIJEST NA BOARDU':['NOTICE ON THE BOARD','HINWEIS AUF DEM BOARD','AVVISO SUL BOARD'], 'Info':['Info','Info','Info'], 'Odgoda':['Postponed','Verschoben','Rinvio'], 'Otkazano':['Cancelled','Abgesagt','Annullato'],
+    'Tekst (HR)':['Text (HR)','Text (HR)','Testo (HR)'], 'Tekst (EN, nije obavezno)':['Text (EN, optional)','Text (EN, optional)','Testo (EN, facoltativo)'], 'npr. Dan 2 odgođen zbog bure':['e.g. Day 2 postponed due to bora','z. B. Tag 2 wegen Bora verschoben','es. Giorno 2 rinviato per bora'],
+    'Prazan tekst = obavijest se ne prikazuje.':['Empty text = no notice shown.','Leerer Text = kein Hinweis.','Testo vuoto = nessun avviso.'], 'PRAVILA DANA':['DAY RULES','TAGESREGELN','REGOLE DEL GIORNO'],
+    'Ovjera određuje liste (u poretku samo ovjerene ekipe)':['Check-in defines the lists (only checked-in teams in standings)','Check-in bestimmt die Listen (nur eingecheckte Teams)','Il check-in determina le liste (solo squadre registrate)'],
+    'Kasno kačenje dopušteno':['Late hook-up allowed','Später Biss erlaubt','Abboccata tardiva consentita'], 'Prozor prije kraja (min)':['Window before end (min)','Fenster vor Ende (Min)','Finestra prima della fine (min)'], 'Produženje borbe (min)':['Fight extension (min)','Drillverlängerung (Min)','Estensione combattimento (min)'],
+    'Spremi postavke':['Save settings','Einstellungen speichern','Salva impostazioni'], 'Spremljeno.':['Saved.','Gespeichert.','Salvato.'], 'DANI':['DAYS','TAGE','GIORNI'], 'Pomakni':['Move','Verschieben','Sposta'], 'Novi datum za dan':['New date for day','Neues Datum für Tag','Nuova data per il giorno'],
+    'Razlog (ekipe ga vide u obavijesti):':['Reason (teams see it in the notice):','Grund (Teams sehen ihn in der Mitteilung):','Motivo (le squadre lo vedono nell’avviso):'], 'nevrijeme':['bad weather','Unwetter','maltempo'],
+    'Pomaknuti i sve sljedeće dane za isti broj dana?':['Move all following days by the same number of days?','Alle folgenden Tage um gleich viele Tage verschieben?','Spostare anche i giorni successivi dello stesso numero di giorni?'], 'nema registracije broda':['no boat registration','keine Bootskennung','manca targa della barca'],
     'Prijave':['Entries','Anmeldungen','Iscrizioni'], 'ČEKA POTVRDU':['AWAITING APPROVAL','WARTET AUF BESTÄTIGUNG','IN ATTESA'], 'POTVRĐENE':['CONFIRMED','BESTÄTIGT','CONFERMATE'], 'ODBIJENE I ODUSTALE':['REJECTED AND WITHDRAWN','ABGELEHNT UND ZURÜCKGEZOGEN','RIFIUTATE E RITIRATE'],
     'Potvrdi':['Confirm','Bestätigen','Conferma'], 'Odbij':['Reject','Ablehnen','Rifiuta'], 'Odustala':['Withdrawn','Zurückgezogen','Ritirata'], 'Vrati':['Restore','Wiederherstellen','Ripristina'],
     'Nema prijava na čekanju.':['No entries waiting.','Keine wartenden Anmeldungen.','Nessuna iscrizione in attesa.'], 'Odbiti prijavu':['Reject entry','Anmeldung ablehnen','Rifiutare iscrizione'],
@@ -3819,6 +3838,19 @@ var REG;
     return ulogaHdr('org', naslov, traka).replace('ORGANIZATOR · ŠRK FELUN', 'ORGANIZATOR · ' + e_(String(t.organizer || t.name || '').toUpperCase().slice(0, 22)));
   }
 
+  /* 591 · G11: obavijest na boardu, ovjera određuje liste, kasno kačenje */
+  function postavkeTurnira(){
+    var t = (O.st && O.st.tournament) || {}, bs = t.board_settings || {}, P = O.post || (O.post = { obavijest: bs.obavijest || '', obavijestEn: bs.obavijestEn || '', tip: bs.obavijestTip || 'info', ovjera: t.checkin_required !== false, kasno: t.late_hook_enabled !== false, prozor: t.late_hook_window_min != null ? t.late_hook_window_min : 60, produzenje: t.late_hook_extension_min != null ? t.late_hook_extension_min : 60 });
+    var pol = function(k, lab, extra){ return '<label class="lab">' + lab + '</label><input class="polje" data-orgpost="' + k + '" value="' + e_(P[k]) + '"' + (extra || '') + '>'; };
+    return '<div class="odj">📢 ' + T('OBAVIJEST NA BOARDU') + '</div><div class="mk"><div class="cipovi" style="flex-wrap:wrap">' + [['info','ℹ ' + T('Info')],['odgoda','⏸ ' + T('Odgoda')],['otkazano','✕ ' + T('Otkazano')]].map(function(x){ return '<button data-orgposttip="' + x[0] + '" aria-pressed="' + (P.tip === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>'
+      + pol('obavijest', T('Tekst (HR)'), ' maxlength="300" placeholder="' + T('npr. Dan 2 odgođen zbog bure') + '"') + pol('obavijestEn', T('Tekst (EN, nije obavezno)'), ' maxlength="300"')
+      + '<p class="opis">' + T('Prazan tekst = obavijest se ne prikazuje.') + '</p></div>'
+      + '<div class="odj">⚙ ' + T('PRAVILA DANA') + '</div><div class="mk">'
+      + '<label class="kvac"><input type="checkbox" data-orgpostk="ovjera"' + (P.ovjera ? ' checked' : '') + '> ' + T('Ovjera određuje liste (u poretku samo ovjerene ekipe)') + '</label>'
+      + '<label class="kvac" style="margin-top:8px"><input type="checkbox" data-orgpostk="kasno"' + (P.kasno ? ' checked' : '') + '> ' + T('Kasno kačenje dopušteno') + '</label>'
+      + (P.kasno ? '<div style="display:flex;gap:8px"><div style="flex:1">' + pol('prozor', T('Prozor prije kraja (min)'), ' inputmode="numeric"') + '</div><div style="flex:1">' + pol('produzenje', T('Produženje borbe (min)'), ' inputmode="numeric"') + '</div></div>' : '')
+      + '</div><button class="plavi" data-orgpostspremi style="margin:4px 0 14px">' + T('Spremi postavke') + '</button>' + (O.postOk ? '<p class="opis" style="color:#15803d">✓ ' + T('Spremljeno.') + '</p>' : '');
+  }
   window.ORG = {
     aktivan: function(){ return !!O.tid; },
     otvori: function(tid){ O.tid = tid; O.st = null; O.ekipe = null; O.srd = null; O.srdDan = null; O.otvorena = null; UL.org = 'pregled'; S.v = 'org'; LIST = null; window.scrollTo(0, 0); crtaj(); ucitaj(); },
@@ -3851,7 +3883,7 @@ var REG;
         h += L.map(function(x){ return '<div class="redak"><span class="mj sport">' + (x.compNumber != null ? x.compNumber : '—') + '</span><div><b data-bezprijevoda>' + e_(x.name) + '</b>' + (x.paketa ? '' : '<small>' + T('nije naručila') + '</small>') + '</div><span class="bod sport">' + (x.paketa || '') + '</span></div>'; }).join('');
         h += '<button class="sir" data-orgkopiraj style="margin-top:10px">' + T('Kopiraj popis za dobavljača') + '</button>';
       } else if (tab === 'liste') {
-        h = '<div class="mk"><p class="opis">' + T('Prijave i ždrijeb, liste i obrasci, postavke, izgled boarda, sponzori, korisnici i dnevnik rade u web adminu — i na mobitelu.') + '</p><a class="plavi" style="display:block;text-align:center;text-decoration:none" href="https://admin.bgf.live" target="_blank" rel="noopener">' + T('Otvori web admin ↗') + '</a></div>';
+        h = postavkeTurnira() + '<div class="odj">📥 ' + T('LISTE ZA EXCEL') + '</div><div class="info">' + [['ekipe','Ekipe i sastavi'],['kontakti','Kontakti kapetana'],['majice','Majice'],['dozvole','Dozvole (provjera)'],['rezultati','Rezultati']].map(function(x){ return '<div data-orglista="' + x[0] + '" style="cursor:pointer"><b>' + T(x[1]) + '</b><span>CSV ↓</span></div>'; }).join('') + '</div>' + '<div class="mk"><p class="opis">' + T('Prijave i ždrijeb, liste i obrasci, postavke, izgled boarda, sponzori, korisnici i dnevnik rade u web adminu — i na mobitelu.') + '</p><a class="plavi" style="display:block;text-align:center;text-decoration:none" href="https://admin.bgf.live" target="_blank" rel="noopener">' + T('Otvori web admin ↗') + '</a></div>';
       } else {
         var cek = A.filter(function(e){ return e.entry_status === 'pending' || e.entry_status === 'submitted'; });
         var nepl = A.filter(function(e){ return placeno(e) === 'ne'; }), dz = A.filter(losaDozvola);
@@ -3861,9 +3893,12 @@ var REG;
         var zad = [];
         nepl.forEach(function(e){ zad.push('💶 <span data-bezprijevoda>' + e_(e.name) + '</span> · ' + T('Neplaćeno') + ' ' + Number(e.fee_amount || 0) + ' €'); });
         dz.forEach(function(e){ zad.push('📄 <span data-bezprijevoda>' + e_(e.name) + '</span> · ' + T('dozvola nije važeća')); });
-        A.filter(function(e){ return !String(e.boat_reg || '').trim(); }).forEach(function(e){ zad.push('🚤 <span data-bezprijevoda>' + e_(e.name) + '</span> · ' + T('nema registracije broda')); });   /* 583 */
+        A.filter(function(e){ return !String(e.boat_reg || '').trim() && ((O.st && O.st.tournament && O.st.tournament.vrsta) !== 'pilot'); }).forEach(function(e){ zad.push('🚤 <span data-bezprijevoda>' + e_(e.name) + '</span> · ' + T('nema registracije broda')); });   /* 583 */
         cek.forEach(function(e){ zad.push('📝 <span data-bezprijevoda>' + e_(e.name) + '</span> · ' + T('čeka potvrdu')); });
         h += '<div class="odj">' + T('⚠ ZA NAPRAVITI') + '</div>' + (zad.length ? '<div class="info">' + zad.slice(0, 30).map(function(z){ return '<div><span>' + z + '</span></div>'; }).join('') + '</div>' : '<p class="opis">' + T('Sve je u redu.') + '</p>');
+        /* 590 · G3: dani turnira s pomakom (nevrijeme) */
+        var Dd = dani(O.st && O.st.tournament), fmt = function(x){ var p = String(x).split('-'); return (+p[2]) + '. ' + (+p[1]) + '. ' + p[0] + '.'; };
+        if (Dd.length) h += '<div class="odj">🗓 ' + T('DANI') + '</div><div class="info">' + Dd.map(function(x, i){ return '<div><b>' + T('Dan') + ' ' + (i + 1) + ' · ' + fmt(x) + '</b><span><button class="zvono" data-orgpomak="' + (i + 1) + '">' + T('Pomakni') + '</button></span></div>'; }).join('') + '</div>';
         h += '<div class="odj">🐟 ' + T('Srdele').toUpperCase() + ' · ' + T('Dan') + ' ' + (O.srdDan || '') + '</div><div class="info"><div data-ultab="srdele" style="cursor:pointer"><b>' + srdUk + ' ' + T('ukupno paketa') + '</b><span>›</span></div></div>';
       }
       return hdr(T(naslov)) + '<main>' + (O.greska ? '<p class="opis" style="color:#b91c1c">' + e_(O.greska) + '</p>' : '') + h + '</main>';
@@ -3883,12 +3918,36 @@ var REG;
     var i = h.indexOf('<main>'); return i < 0 ? h : h.slice(0, i + 6) + kart + h.slice(i + 6);
   }; }
 
+  document.addEventListener('input', function(ev){ var el = ev.target; if (el.dataset && el.dataset.orgpost && O.post) { O.post[el.dataset.orgpost] = el.value; O.postOk = false; } });
   document.addEventListener('click', function(ev){
-    var b = ev.target.closest('[data-orgotvori],[data-orgek],[data-orgplati],[data-orgsrd],[data-orgkopiraj],[data-orgstanje],[data-orgzdrijeb]'); if (!b) return;
+    var b = ev.target.closest('[data-orgotvori],[data-orgek],[data-orgplati],[data-orgsrd],[data-orgkopiraj],[data-orgstanje],[data-orgzdrijeb],[data-orgpomak],[data-orgposttip],[data-orgpostk],[data-orgpostspremi],[data-orglista]'); if (!b) return;
     ev.stopPropagation(); ev.preventDefault();
     if (b.dataset.orgotvori) { ORG.otvori(b.dataset.orgotvori); return; }
     if (b.dataset.orgek) { O.otvorena = O.otvorena === b.dataset.orgek ? null : b.dataset.orgek; crtaj(); return; }
     if (b.dataset.orgsrd) { O.srdDan = Number(b.dataset.orgsrd); ucitaj(); return; }
+    if (b.dataset.orglista) { /* 592 · G9: lista kao CSV (Excel) */
+      var tok = PR.M && PR.M.access, ur = (PR.BACKEND || 'https://bgf-live-backend.vercel.app') + '/api/tournaments/' + O.tid + '/liste/' + b.dataset.orglista;
+      fetch(ur, { headers:{ Authorization:'Bearer ' + tok } }).then(function(r){ if (!r.ok) return r.json().then(function(d){ throw new Error(d.error || ('HTTP ' + r.status)); });
+        var ime = ((r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/) || [])[1] || (function(n, v){ return String(n || 'turnir').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase() + '-' + v + '.csv'; })((O.st && O.st.tournament && O.st.tournament.name), b.dataset.orglista); return r.blob().then(function(bl){ var a = document.createElement('a'); a.href = URL.createObjectURL(bl); a.download = ime; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000); }); })
+        .catch(function(er){ O.greska = er.message; crtaj(); });
+      return; }
+    if (b.dataset.orgposttip) { O.post.tip = b.dataset.orgposttip; O.postOk = false; crtaj(); return; }
+    if (b.dataset.orgpostk) { O.post[b.dataset.orgpostk] = !O.post[b.dataset.orgpostk]; O.postOk = false; crtaj(); return; }
+    if (b.hasAttribute('data-orgpostspremi')) { var P = O.post, t = (O.st && O.st.tournament) || {}, bs = Object.assign({}, t.board_settings || {});
+      delete bs.obavijest; delete bs.obavijestEn; delete bs.obavijestTip;
+      if (P.obavijest.trim()) { bs.obavijest = P.obavijest.trim(); bs.obavijestTip = P.tip; if (P.obavijestEn.trim()) bs.obavijestEn = P.obavijestEn.trim(); }
+      var tijelo = { boardSettings:bs, checkinRequired:!!P.ovjera, lateHookEnabled:!!P.kasno };
+      if (P.kasno) { tijelo.lateHookWindowMin = Number(P.prozor) || 0; tijelo.lateHookExtensionMin = Number(P.produzenje) || 0; }
+      b.disabled = true;
+      api('/api/tournaments/' + O.tid, { method:'PUT', body:JSON.stringify(tijelo) }).then(function(d){ if (O.st && d.tournament) O.st.tournament = Object.assign(O.st.tournament, d.tournament); O.postOk = true; O.greska = ''; crtaj(); }, function(er){ O.greska = er.message; crtaj(); });
+      return; }
+    if (b.dataset.orgpomak) { var dn = Number(b.dataset.orgpomak), Dd = dani(O.st && O.st.tournament);
+      var nd = prompt(T('Novi datum za dan') + ' ' + dn + ' (GGGG-MM-DD):', Dd[dn - 1] || ''); if (!nd) return;
+      var raz = prompt(T('Razlog (ekipe ga vide u obavijesti):'), T('nevrijeme')); if (!raz) return;
+      var ost = dn < Dd.length ? confirm(T('Pomaknuti i sve sljedeće dane za isti broj dana?')) : false;
+      api('/api/tournaments/' + O.tid + '/days/' + dn + '/pomakni', { method:'POST', body:JSON.stringify({ datum:nd.trim(), razlog:raz.trim(), ostali:ost }) })
+        .then(function(d){ O.greska = ''; alert(d.poruka || 'OK'); ucitaj(); }, function(er){ O.greska = er.message; crtaj(); });
+      return; }
     if (b.dataset.orgstanje) { var dio = b.dataset.orgstanje.split(':'), ek = (O.ekipe || []).find(function(x){ return String(x.id) === dio[0]; }); if (!ek) return;
       if (dio[1] === 'rejected' && !confirm(T('Odbiti prijavu') + ' „' + ek.name + '”?')) return;
       b.disabled = true;
@@ -4303,7 +4362,7 @@ var REG;
   /* ---------- statistika na pravim podacima ---------- */
   var ST = { d:null, salje:false, nacin:'godina' };
   function ucitajStat(){ if (ST.salje) return; ST.salje = true;
-    var fin = TURNIRI.filter(function(t){ return t.pravi && t.st === 'zavrsen'; });
+    var fin = TURNIRI.filter(function(t){ return t.pravi && t.st === 'zavrsen' && t.vrstaRaw !== 'pilot'; });   /* 588: pilot izdvojen iz statistike */
     Promise.all(fin.map(function(t){ return fetch((PR.BACKEND || 'https://bgf-live-backend.vercel.app') + '/api/public/' + encodeURIComponent(t.id) + '/leaderboard').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }).then(function(d){ return { t:t, d:d }; }); }))
       .then(function(L){ ST.salje = false; ST.d = L.filter(function(x){ return x.d; }); if (S.v === 'stat') crtaj(); });
   }

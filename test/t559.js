@@ -12,7 +12,7 @@ const d = new Date(), danas = d.getFullYear() + '-' + String(d.getMonth()+1).pad
     if (u.includes('/api/public/tournaments')) return J({ live:[], upcoming:[], finished:[] });
     if (u.includes('/api/ekipa/kod')) return J({ nacin:'ekipa', access_token:'tokE', refresh_token:'refE', expires_in:3600, tournamentId:'T1', teamId:'e0', ekipa:{ id:'e0', naziv:'TRITON', broj:1, turnir:'Kup' } });
     if (u.includes('/api/me/roles')) return J({ user:{ id:'UE', email:'ekipa-e0@ekipe.bgf.live', name:'Ekipa TRITON' }, person:null, roles:[{ role:'team', tournamentId:'T1', teamId:'e0' }], tournaments:[{ id:'T1', name:'Kup', subdomain:'kup', day_dates:[danas] }], teams:[{ id:'e0', name:'TRITON' }] });
-    if (u.includes('/api/tournaments/T1/state')) return J({ tournament:{ id:'T1', name:'Kup', subdomain:'kup', start_date:danas, days:1, day_dates:[danas] }, fishingHours:[{ day_number:1, start_time:'00:00:00', end_time:'23:59:00' }], dayLocks:[], teams:[{ id:'e0', name:'TRITON', comp_number:1, anglers:[{ id:'a0', name:'Frane Rokov' }] }], ruleSpecies:[{ id:'s1', name:'Plavoperajna tuna', can_release:true }], ruleNotes:{}, users:[], verifications:[], incidents:[], sponsors:[] });
+    if (u.includes('/api/tournaments/T1/state')) return J({ tournament:{ id:'T1', name:'Kup', subdomain:'kup', start_date:danas, days:1, day_dates:[danas], forbidden_zones:[{ naziv:'Luka Mlini', lat:42.62, lon:18.15, radius_m:300 }] }, fishingHours:[{ day_number:1, start_time:'00:00:00', end_time:'23:59:00' }], dayLocks:[], teams:[{ id:'e0', name:'TRITON', comp_number:1, anglers:[{ id:'a0', name:'Frane Rokov' }] }], ruleSpecies:[{ id:'s1', name:'Plavoperajna tuna', can_release:true }], ruleNotes:{}, users:[], verifications:[], incidents:[], sponsors:[] });
     if (u.includes('/api/tournaments/T1/positions') && m === 'POST') { st.poz.push(JSON.parse(r.request().postData())); return J({ ok:true }); }
     if (u.includes('/api/me/uredaj')) { st.uredaj.push(JSON.parse(r.request().postData())); return J({ ok:true }); }
     return J({}); });
@@ -35,6 +35,8 @@ const d = new Date(), danas = d.getFullYear() + '-' + String(d.getMonth()+1).pad
   await pg.evaluate(() => window.__cap.watchers[0].cb({ latitude:42.62, longitude:18.15, accuracy:8, speed:4.1, bearing:180 }, null));
   await pg.waitForTimeout(500);
   ok('pozicija iz pozadine → zadnja pozicija u aplikaciji i poslana sucu s baterijom 42 %', await pg.evaluate(() => PRAVO.zadnjaPoz && Math.abs(PRAVO.zadnjaPoz.lat - 42.62) < 1e-6) && st.poz.length === 1 && st.poz[0].positions[0].lat === 42.62 && st.poz[0].positions[0].batteryPct === 42, JSON.stringify([st.poz, await pg.evaluate(() => PRAVO.zadnjaPoz)]));
+  const tostT = await pg.evaluate(() => document.body.innerText);
+  ok('594: brod u zabranjenoj zoni → upozorenje „Zabranjena zona: Luka Mlini”', /Zabranjena zona: Luka Mlini/.test(tostT), tostT.slice(-300));
   await pg.waitForTimeout(6000);
   ok('uređaj prijavljen za obavijesti (FCM token → /api/me/uredaj)', st.uredaj.length >= 1 && st.uredaj[0].platform === 'android' && st.uredaj[0].token.startsWith('fcm-'), JSON.stringify(st.uredaj));
   await pg.evaluate(() => (window.__cap.listeners.pushNotificationReceived || []).forEach(f => f({ title:'Sudac', body:'Ulov priznat' }))); await pg.waitForTimeout(200);

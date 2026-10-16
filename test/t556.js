@@ -17,9 +17,12 @@ const za5 = new Date(d); za5.setDate(d.getDate() + 5); const za6 = new Date(d); 
     if (u.includes('/api/public/tournaments')) return J({ live:[], upcoming:[], finished:[] });
     if (u.includes('/api/me/roles')) return J({ user:{ id:'O1', email:'tonci@felun.hr', name:'Tonći' }, person:null, roles:[{ role:'organizer', tournamentId:'T1', teamId:null }], tournaments:[{ id:'T1', name:'Big Game Felun 2027' }] });
     if (u.includes('/api/me/profil')) return J({ osoba:null });
-    if (u.includes('/api/tournaments/T1/state')) return J({ tournament:{ id:'T1', name:'Big Game Felun 2027', organizer:'ŠRK Felun', start_date:iso(za5), days:2, day_dates:[iso(za5), iso(za6)] }, teams:[], users:[] });
+    if (u.includes('/api/tournaments/T1') && m === 'PUT' && !u.includes('/teams')) { st.postavke = JSON.parse(r.request().postData()); return J({ tournament:{ id:'T1' } }); }
+    if (u.includes('/api/tournaments/T1/state')) return J({ tournament:{ id:'T1', board_settings:{ kompaktno:true }, checkin_required:true, late_hook_enabled:true, late_hook_window_min:60, late_hook_extension_min:60, name:'Big Game Felun 2027', organizer:'ŠRK Felun', start_date:iso(za5), days:2, day_dates:[iso(za5), iso(za6)] }, teams:[], users:[] });
     if (u.includes('/api/tournaments/T1/teams') && m === 'PUT') { const b2 = JSON.parse(r.request().postData()); st.put.push(b2); return J({ ok:true }); }
     if (u.includes('/api/tournaments/T1/teams')) return J({ teams:TEAMS });
+    if (u.includes('/api/tournaments/T1/liste/')) { st.lista = u.split('/liste/')[1]; return r.fulfill({ status:200, headers:{ 'Content-Type':'text/csv', 'Content-Disposition':'attachment; filename="kup-ekipe.csv"' }, body:'\uFEFFBr.;Ekipa\r\n1;CORTO\r\n' }); }
+    if (u.includes('/api/tournaments/T1/days/1/pomakni')) { st.pomak = JSON.parse(r.request().postData()); return J({ ok:true, poruka:'🗓 Dan 1 pomaknut' }); }
     if (u.includes('/api/tournaments/T1/draw')) { const b2 = JSON.parse(r.request().postData() || '{}'); st.draw = (st.draw || []).concat([b2]);
       if (!b2.allowUnpaid) return J({ needsConfirm:true, unpaidCount:1, unpaidNames:['BONACA'], totalCount:3, pendingNames:[] });
       TEAMS[0].comp_number = 2; TEAMS[1].comp_number = 1; return J({ result:[{ id:'e2', comp_number:1 },{ id:'e1', comp_number:2 }], includedUnpaid:1, pendingNames:['NEKA'] }); }
@@ -54,6 +57,19 @@ const za5 = new Date(d); za5.setDate(d.getDate() + 5); const za6 = new Date(d); 
   await pg.click('nav.dno [data-ultab="ekipe"]'); await pg.waitForTimeout(300);
   await pg.click('[data-orgzdrijeb]'); await pg.waitForTimeout(800); tx = await app();
   ok('Ždrijeb: pita za neplaćene, pa provodi s allowUnpaid; javlja prijavu na čekanju', (st.draw || []).length === 2 && st.draw[1].allowUnpaid === true && tx.includes('Ždrijeb proveden') && tx.includes('čeka potvrdu i nije u ždrijebu'), JSON.stringify(st.draw) + tx.slice(0, 400));
+  await pg.click('nav.dno [data-ultab="pregled"]'); await pg.waitForTimeout(300);
+  ok('590: Pregled → DANI s gumbom Pomakni', (await app()).includes('DANI') && !!(await pg.$('[data-orgpomak="1"]')));
+  const odg = ['2099-01-01', 'bura'];
+  pg.removeAllListeners('dialog'); pg.on('dialog', dl => { if (dl.type() === 'prompt') dl.accept(odg.shift()); else dl.accept(); });
+  await pg.click('[data-orgpomak="1"]'); await pg.waitForTimeout(600);
+  ok('590: pomak šalje datum, razlog i „ostali”', st.pomak && st.pomak.datum === '2099-01-01' && st.pomak.razlog === 'bura' && st.pomak.ostali === true, JSON.stringify(st.pomak));
+  await pg.click('nav.dno [data-ultab="liste"]'); await pg.waitForTimeout(300);
+  await pg.click('[data-orgposttip="odgoda"]'); await pg.fill('[data-orgpost="obavijest"]', 'Dan 2 odgođen zbog bure'); await pg.click('[data-orgpostk="ovjera"]'); await pg.fill('[data-orgpost="prozor"]', '30');
+  await pg.click('[data-orgpostspremi]'); await pg.waitForTimeout(500);
+  ok('591: Više → obavijest (odgoda), ovjera isključena, prozor 30; izgled boarda sačuvan', st.postavke && st.postavke.boardSettings.obavijestTip === 'odgoda' && /bure/.test(st.postavke.boardSettings.obavijest) && st.postavke.boardSettings.kompaktno === true && st.postavke.checkinRequired === false && st.postavke.lateHookWindowMin === 30 && (await app()).includes('Spremljeno'), JSON.stringify(st.postavke));
+  await pg.click('nav.dno [data-ultab="liste"]'); await pg.waitForTimeout(300);
+  const [dl] = await Promise.all([pg.waitForEvent('download', { timeout:5000 }).catch(() => null), pg.click('[data-orglista="ekipe"]')]);
+  ok('592: Više → Liste za Excel: preuzimanje CSV-a', st.lista === 'ekipe' && dl && /big-game-felun-2027-ekipe\.csv|kup-ekipe\.csv/.test(dl.suggestedFilename()), JSON.stringify([st.lista, dl && dl.suggestedFilename()]));
   await pg.evaluate(() => { S.jezik = 'en'; UL.org = 'pregled'; crtaj(); }); await pg.waitForTimeout(200); tx = await app();
   ok('EN: teams entered / unpaid / TO DO', tx.includes('teams entered') && tx.includes('TO DO') && tx.includes('starts in 5 days'), tx.slice(0, 500));
   ok('bez JS grešaka', greske.length === 0, greske.join(' | ').slice(0, 400));
