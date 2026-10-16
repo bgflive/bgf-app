@@ -485,7 +485,7 @@ body.tmmod .uz{color:#0456E8!important}
 .kkoraci span.cek{background:#fef3c7;color:#92400e}
 .info .brzo, main > .brzo{margin:0 0 12px}
 /* 505 · oznaka verzije (da se vidi koja je verzija na mobitelu) */
-body::after{content:'v595';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
+body::after{content:'v601';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
 /* 515 · stanje ribe bojom ruba (Nikola 13.10.) */
 .ulov.rub-zeleno{border-left:5px solid #16a34a;border-radius:0 12px 12px 0}
 .ulov.rub-plavo{border-left:5px solid #2563eb;border-radius:0 12px 12px 0}
@@ -815,6 +815,7 @@ const P = {
     };
     return hdr + (JV() && t.pravi && S.ttab !== 'pregled' ? JAVNO.tab(t, S.ttab) : sad[S.ttab]); },
 
+  klub: () => (window.JAVNO && JAVNO.klub) ? JAVNO.klub() : '',
   ekipa: () => JV() && S.ekKljuc ? JAVNO.ekipaGod() : `<header class="vrh"><div class="red1"><button class="avatar" data-natrag-t aria-label="Natrag">‹</button><img src="${SL.logo}" alt="BGF.LIVE"><span style="width:44px"></span></div><div class="naslovV">${S.ek}</div><p style="margin:2px 0 0;color:#cfe0ff">Dubrovnik · prvi nastup 2012.</p></header>
     <main><div class="brojke"><div><b>41</b><small>turnir</small></div><div><b>58</b><small>ulova</small></div><div><b>17</b><small>ljudi</small></div><div><b>7× 1.</b><small>pobjeda</small></div></div>
     <div class="odj">🐟 NAJVEĆA RIBA</div><div class="mala"><div class="m">${FOTO.vrh}</div><div><b>214 kg · Tuna</b><small>Tunistra 2026 · ulovio Ivan Kovač</small></div></div>
@@ -3300,9 +3301,9 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     var kc = Math.max((L.feed || []).filter(function(f){ return f.kind === 'hooked' && String(f.teamId) === String(id); }).length, u.length);
     var plas = (L.tournament || {}).rankingMode === 'placement';
     var h = '<div class="rucka"></div><b style="font-size:23px" data-bezprijevoda>' + e_(e.name) + ' <span class="nbr">#' + e_(e.compNumber) + '</span></b>';
-    if (e.club) h += '<p class="opis" data-bezprijevoda>' + e_(e.club) + (e.clubCity ? ' · ' + e_(e.clubCity) : '') + '</p>';
+    if (e.club) h += '<p class="opis" data-bezprijevoda><button class="zvono" data-jklub="' + e_(e.club) + '">🏛 ' + e_(e.club) + (e.clubCity ? ' · ' + e_(e.clubCity) : '') + ' →</button></p>';   /* 601 */
     h += '<div class="brojke"><div><b class="sport">' + (le.disqualified ? 'DSQ' : mj >= 0 ? (poredak(L, 'uk')[mj].mj) : '—') + '</b><small>' + (plas ? 'PB' : 'mjesto') + '</small></div><div><b class="sport">' + kc + '</b><small>kačenja</small></div><div><b class="sport">' + (le.catches || 0) + '</b><small>ulova</small></div><div><b class="sport">' + (plas ? (le.placementPoints != null ? broj(le.placementPoints) : '—') : broj(le.points || 0)) + '</b><small>' + (plas ? 'PB' : 'bodova') + '</small></div></div>';
-    h += '<div class="odj">⚓ POSADA</div>' + (e.anglers || []).map(function(c){ var kap = e.captain && c.name === e.captain; return '<div class="redak"><span class="av">' + e_(inic(c.name)) + '</span><div><b data-bezprijevoda>' + e_(c.name) + '</b>' + (kap ? '<small>kapetan</small>' : '') + '</div></div>'; }).join('');
+    h += '<div class="odj">⚓ POSADA</div>' + (e.anglers || []).map(function(c){ var kap = e.captain && c.name === e.captain; return c.bgf ? '<button class="redak" data-josb="' + c.bgf + '"><span class="av">' + e_(inic(c.name)) + '</span><div><b data-bezprijevoda>' + e_(c.name) + '</b><small>' + (kap ? 'kapetan · ' : '') + 'BGF-' + c.bgf + '</small></div><span class="s" style="margin-left:auto;color:#0456E8">→</span></button>' : '<div class="redak"><span class="av">' + e_(inic(c.name)) + '</span><div><b data-bezprijevoda>' + e_(c.name) + '</b>' + (kap ? '<small>kapetan</small>' : '') + '</div></div>'; }).join('');   /* 601 */
     h += '<div class="odj">🎣 ULOVI EKIPE</div>' + (u.length ? u.map(function(c){ return redakDog(Object.assign({}, c, { kind:'catch' })); }).join('') : '<p class="opis">Još nema ulova.</p>');
     return h;
   };
@@ -3362,7 +3363,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
       + '<div style="display:flex;gap:12px;align-items:center;margin-top:12px">' + (av ? '<span class="av" style="width:56px;height:56px;font-size:20px">' + e_(av) + '</span>' : '')
       + '<div style="min-width:0"><div class="naslovV" style="margin:0" data-bezprijevoda>' + e_(naslov) + '</div>' + (ispod ? '<p style="margin:0;color:#cfe0ff">' + ispod + '</p>' : '') + '</div></div></header>';
   }
-  function otvori(v, k, val){ stog.push({ v:S.v, t:S.t, ttab:S.ttab, osBgf:S.osBgf, ekKljuc:S.ekKljuc }); LIST = null; S[k] = val; S.v = v; window.scrollTo(0, 0); crtaj(); }
+  function otvori(v, k, val){ stog.push({ v:S.v, t:S.t, ttab:S.ttab, osBgf:S.osBgf, ekKljuc:S.ekKljuc, klubIme:S.klubIme }); LIST = null; S[k] = val; S.v = v; window.scrollTo(0, 0); crtaj(); }
 
   /* ---------- pretraga ---------- */
   function trazi(){
@@ -3379,6 +3380,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     var d = REZ.d, h = '';
     if (d.osobe.length) h += '<div class="odj">👤 NATJECATELJI</div>' + d.osobe.map(function(o){ return '<button class="redak" data-josb="' + o.bgf + '"><span class="av">' + e_(inic(o.ime)) + '</span><div><b data-bezprijevoda>' + e_(o.ime) + '</b><small>BGF-' + o.bgf + '</small></div></button>'; }).join('');
     if (d.ekipe.length) h += '<div class="odj">⚓ EKIPE</div>' + d.ekipe.map(function(x){ return '<button class="redak" data-jekg="' + e_(x.kljuc) + '"><span class="av">' + e_(inic(x.ime)) + '</span><div><b data-bezprijevoda>' + e_(x.ime) + '</b><small>' + x.nastupa + ' nastupa · ' + x.zadnja + '.</small></div></button>'; }).join('');
+    if ((d.klubovi || []).length) h += '<div class="odj">🏛 KLUBOVI</div>' + d.klubovi.map(function(k){ return '<button class="redak" data-jklub="' + e_(k.naziv) + '"><span class="av">' + e_(inic(k.naziv)) + '</span><div><b data-bezprijevoda>' + e_(k.naziv) + '</b>' + (k.mjesto ? '<small data-bezprijevoda>' + e_(k.mjesto) + '</small>' : '') + '</div></button>'; }).join('');   /* 601 */
     if (d.turniri.length) h += '<div class="odj">🏆 TURNIRI</div>' + d.turniri.map(function(t){ var T = TURNIRI.find(function(x){ return x.id === t.subdomain; }); return T ? mala(T) : '<div class="redak"><div><b>' + e_(t.name) + '</b><small>' + t.godina + '.</small></div></div>'; }).join('');
     return h || '<p class="opis">Ništa nije pronađeno.</p>';
   }
@@ -3408,6 +3410,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     var ekipe = [], vid = {}; d.nastupi.forEach(function(n){ if (!n.ekipa) return; var ime = n.ekipa.replace(/\s+\d{1,2}$/, ''), k = ime.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); if (!vid[k]) { vid[k] = 1; ekipe.push(ime); } });
     h += '<div class="odj">🎣 NASTUPI</div>' + (d.nastupi.length ? d.nastupi.map(function(n){
       return '<button class="redak"' + (n.subdomain && TURNIRI.some(function(t){ return t.id === n.subdomain; }) ? ' data-t="' + e_(n.subdomain) + '"' : '') + '><div style="min-width:0"><b data-bezprijevoda>' + e_(n.turnir) + '</b><small>' + n.godina + '. · <span data-bezprijevoda>' + e_(n.ekipa || '') + '</span>' + (n.uloga ? ' · ' + n.uloga : '') + (n.izvor === 'arhiva' ? ' · arhiva' : '') + '</small></div><span class="bod">' + (n.mjesto ? n.mjesto + '.' : '') + '</span></button>'; }).join('') : '<p class="opis">Još nema događaja.</p>');
+    if ((o.klubovi || []).length) { var kvid = {}; h += '<div class="odj">🏛 KLUBOVI</div>' + o.klubovi.filter(function(k){ if (kvid[k.klub]) return false; kvid[k.klub] = 1; return true; }).map(function(k){ return '<button class="redak" data-jklub="' + e_(k.klub) + '"><span class="av">' + e_(inic(k.klub)) + '</span><div><b data-bezprijevoda>' + e_(k.klub) + '</b><small>' + o.klubovi.filter(function(x){ return x.klub === k.klub; }).map(function(x){ return x.sezona; }).join(', ') + '.</small></div><span class="s" style="margin-left:auto;color:#0456E8">→</span></button>'; }).join(''); }   /* 601 */
     if (ekipe.length) h += '<div class="odj">⚓ EKIPE</div>' + ekipe.map(function(n){ return '<button class="redak" data-jekg="' + e_(n) + '"><span class="av">' + e_(inic(n)) + '</span><div><b data-bezprijevoda>' + e_(n) + '</b></div><span class="s" style="margin-left:auto;color:#0456E8">→</span></button>'; }).join('');
     if (d.ulovi.length) h += '<div class="odj">🐟 OSOBNI ULOVI</div>' + d.ulovi.map(function(u){ var tp = u.ishod === 'released' ? 'pust' : 'brod';
       return '<div class="ulov"><span class="v">' + u.godina + '<small>Dan ' + u.dan + '</small></span>' + bico(tp) + '<div><b data-bezprijevoda>' + e_(u.turnir) + '</b><span><span>' + e_(vrstaT(u.vrsta)) + '</span>' + (u.kg ? ' · ' + broj(u.kg) + ' kg' : '') + ' · <span>' + (tp === 'pust' ? 'Pušteno' : 'Na brodu') + '</span>' + (u.bodovi ? ' · +' + broj(u.bodovi) : '') + '</span></div></div>'; }).join('');
@@ -3441,13 +3444,29 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-obpu
     var t = TURNIRI.find(function(x){ return x.id === S.t; }) || {}; var ime = (h.match(/<b style="font-size:23px" data-bezprijevoda>([^<]*)/) || [])[1] || '';
     return h + '<button class="sir" style="margin-top:12px" data-jekg="' + ime.trim() + '">Ekipa kroz godine →</button>'; }; }
 
+  /* ---------- 601 · klub ---------- */
+  var KL = {};
+  J.klub = function(){ var k = S.klubIme || '', x = KL[k];
+    if (!x) { KL[k] = { salje:true }; dohvati('/api/public/klub?ime=' + encodeURIComponent(k)).then(function(d){ KL[k] = { d:d }; if (S.v === 'klub') crtaj(); }, function(er){ KL[k] = { greska: er.status === 404 ? 'Klub nije pronađen.' : 'Bez veze sa serverom.' }; if (S.v === 'klub') crtaj(); }); return zaglavlje(k, '', inic(k)) + '<main><p class="opis">Učitavam…</p></main>'; }
+    if (x.greska) return zaglavlje(k, '', inic(k)) + '<main><p class="opis">' + x.greska + '</p></main>';
+    if (!x.d) return zaglavlje(k, '', inic(k)) + '<main><p class="opis">Učitavam…</p></main>';
+    var d = x.d, b = d.brojke;
+    var h = zaglavlje(d.klub.naziv, d.klub.mjesto ? '<span data-bezprijevoda>' + e_(d.klub.mjesto) + '</span>' : '', inic(d.klub.naziv));
+    h += '<main><div class="brojke"><div><b class="sport">' + b.turnira + '</b><small>organiziranih turnira</small></div><div><b class="sport">' + b.ekipa + '</b><small>ekipa</small></div><div><b class="sport">' + b.clanova + '</b><small>članova (javno)</small></div></div>';
+    if (d.turniri.length) h += '<div class="odj">🏆 ORGANIZIRANI TURNIRI</div>' + d.turniri.map(function(t){ var T = TURNIRI.find(function(y){ return y.id === t.subdomain; }); return '<button class="redak"' + (T ? ' data-t="' + e_(t.subdomain) + '"' : '') + '><div style="min-width:0"><b data-bezprijevoda>' + e_(t.naziv) + '</b><small>' + t.godina + '.</small></div></button>'; }).join('');
+    if (d.ekipe.length) h += '<div class="odj">⚓ EKIPE KLUBA</div>' + d.ekipe.map(function(e){ return '<button class="redak" data-jekg="' + e_(e.kljuc) + '"><span class="av">' + e_(inic(e.ime)) + '</span><div><b data-bezprijevoda>' + e_(e.ime) + '</b><small>' + e.godine.join(', ') + '.</small></div><span class="s" style="margin-left:auto;color:#0456E8">→</span></button>'; }).join('');
+    if (d.clanovi.length) h += '<div class="odj">👤 ČLANOVI</div>' + d.clanovi.map(function(c){ return '<button class="redak" data-josb="' + c.bgf + '"><span class="av">' + e_(inic(c.ime)) + '</span><div><b data-bezprijevoda>' + e_(c.ime) + '</b><small>BGF-' + c.bgf + '</small></div></button>'; }).join('');
+    h += '<p class="opis" style="margin-top:12px">Članovi se prikazuju samo uz njihovu privolu.</p>';
+    return h + '</main>'; };
+
   /* ---------- klikovi ---------- */
   document.addEventListener('click', function(ev){
-    var b = ev.target.closest('[data-josb],[data-jekg],[data-jnatrag]'); if (!b) return;
+    var b = ev.target.closest('[data-josb],[data-jekg],[data-jklub],[data-jnatrag]'); if (!b) return;
     ev.stopPropagation(); ev.preventDefault();
-    if (b.hasAttribute('data-jnatrag')) { var z = stog.pop(); LIST = null; if (z) { S.v = z.v; S.t = z.t; S.ttab = z.ttab; S.osBgf = z.osBgf; S.ekKljuc = z.ekKljuc; } else S.v = 'pocetna'; window.scrollTo(0, 0); crtaj(); return; }
+    if (b.hasAttribute('data-jnatrag')) { var z = stog.pop(); LIST = null; if (z) { S.v = z.v; S.t = z.t; S.ttab = z.ttab; S.osBgf = z.osBgf; S.ekKljuc = z.ekKljuc; S.klubIme = z.klubIme; } else S.v = 'pocetna'; window.scrollTo(0, 0); crtaj(); return; }
     if (b.dataset.josb) otvori('osoba', 'osBgf', Number(b.dataset.josb));
     else if (b.dataset.jekg) otvori('ekipa', 'ekKljuc', b.dataset.jekg);
+    else if (b.dataset.jklub) otvori('klub', 'klubIme', b.dataset.jklub);   /* 601 */
   }, true);
 })();
 </script>
@@ -4381,7 +4400,7 @@ var REG;
     h += '<div class="brojke"><div><b>' + L.length + '</b><small>' + T('turnira') + '</small></div><div><b>' + ulova + '</b><small>' + T('ulova') + '</small></div><div><b>' + (rek ? rek.kg + ' kg' : '—') + '</b><small>' + T('rekord') + (rek ? ' · <span data-bezprijevoda>' + e_(vrstaT(rek.vrsta)) + '</span>' : '') + '</small></div><div><b>' + ekipa + '</b><small>' + T('ekipa') + '</small></div></div>';
     var vr = Object.keys(po).sort(function(a, b){ return po[b] - po[a]; });
     if (vr.length) h += '<div class="odj">' + T('🐟 PO VRSTAMA') + '</div><div class="vr">' + vr.slice(0, 6).map(function(k, i){ return '<div style="background:' + boje[i % boje.length] + '">' + e_(vrstaT(k)) + '<small>' + po[k] + ' ' + T('ulova') + '</small></div>'; }).join('') + '</div>';
-    if (top.length) h += '<div class="odj">' + T('🏆 POBJEDNICI') + '</div>' + top.map(function(x){ return '<div class="redak"><span class="mj sport">1</span><div><b data-bezprijevoda>' + e_(x.ime) + '</b><small data-bezprijevoda>' + e_(x.t) + ' · ' + x.god + '.</small></div></div>'; }).join('');
+    if (top.length) h += '<div class="odj">' + T('🏆 POBJEDNICI') + '</div>' + top.map(function(x){ return '<button class="redak" data-jekg="' + e_(x.ime) + '"><span class="mj sport">1</span><div><b data-bezprijevoda>' + e_(x.ime) + '</b><small data-bezprijevoda>' + e_(x.t) + ' · ' + x.god + '.</small></div><span class="s" style="margin-left:auto;color:#0456E8">→</span></button>'; }).join('');   /* 601 */
     h += '<p class="opis" style="margin-top:12px">' + T('Statistika se računa iz završenih turnira u sustavu; arhiva od 2011. dolazi nakon unosa.') + '</p>';
     return h + '</main>'; } };
   document.addEventListener('click', function(ev){ var b = ev.target.closest('[data-statn]'); if (!b) return; ev.stopPropagation(); ev.preventDefault(); ST.nacin = b.dataset.statn; crtaj(); }, true);
@@ -4420,6 +4439,13 @@ var REG;
     var i = h.indexOf('<div data-josb='); if (i < 0) return h; return h.slice(0, i) + red + h.slice(i); }; }
   document.addEventListener('click', function(ev){ var b = ev.target.closest('[data-kartica]'); if (!b) return; ev.stopPropagation(); ev.preventDefault(); LIST = { k:'kartica' }; crtaj(); }, true);
 })();
+</script>
+
+<script>
+/* 601 · prijevodi profila kluba */
+(function(){ var N = { 'organiziranih turnira':['tournaments organised','organisierte Turniere','tornei organizzati'], 'članova (javno)':['members (public)','Mitglieder (öffentlich)','soci (pubblici)'], 'ORGANIZIRANI TURNIRI':['ORGANISED TOURNAMENTS','ORGANISIERTE TURNIERE','TORNEI ORGANIZZATI'],
+  'EKIPE KLUBA':['CLUB TEAMS','TEAMS DES VEREINS','SQUADRE DEL CLUB'], 'ČLANOVI':['MEMBERS','MITGLIEDER','SOCI'], 'KLUBOVI':['CLUBS','VEREINE','CLUB'], 'Članovi se prikazuju samo uz njihovu privolu.':['Members are shown only with their consent.','Mitglieder werden nur mit ihrer Zustimmung angezeigt.','I soci sono mostrati solo con il loro consenso.'], 'Klub nije pronađen.':['Club not found.','Verein nicht gefunden.','Club non trovato.'] };
+  Object.keys(N).forEach(function(k){ if (!RJ[k]) RJ[k] = N[k]; }); KLJUCEVI.length = 0; Object.keys(RJ).sort(function(a, b){ return b.length - a.length; }).forEach(function(k){ KLJUCEVI.push(k); }); })();
 </script>
 
 </body>
