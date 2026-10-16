@@ -23,13 +23,17 @@ const d = new Date(), danas = d.getFullYear() + '-' + String(d.getMonth()+1).pad
     window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'android', Plugins: {
       BackgroundGeolocation: { addWatcher: (opt, cb) => { window.__cap.watchers.push({ opt, cb }); return Promise.resolve('w' + window.__cap.watchers.length); }, removeWatcher: ({ id }) => { window.__cap.removed.push(id); return Promise.resolve(); }, openSettings: () => Promise.resolve() },
       PushNotifications: { requestPermissions: () => Promise.resolve({ receive:'granted' }), register: () => { setTimeout(() => (window.__cap.listeners.registration || []).forEach(f => f({ value:'fcm-' + 'y'.repeat(40) })), 50); return Promise.resolve(); }, addListener: (n, f) => { (window.__cap.listeners[n] = window.__cap.listeners[n] || []).push(f); return Promise.resolve(); } },
-      App: { addListener: (n, f) => { (window.__cap.listeners[n] = window.__cap.listeners[n] || []).push(f); }, exitApp: () => { window.__cap.izlaz = true; } } } };
+      App: { getInfo: () => Promise.resolve({ build:'1', version:'1.1' }), addListener: (n, f) => { (window.__cap.listeners[n] = window.__cap.listeners[n] || []).push(f); }, exitApp: () => { window.__cap.izlaz = true; } } } };
   });
+  await pg.route('**/apk/verzija.json*', r => r.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ verzija:3, datum:'16.10.2026.' }) }));
   await pg.goto('http://localhost:8559/'); await pg.waitForTimeout(1500);
   ok('APK: ljuska prepoznata (html.apk), web dio radi', await pg.evaluate(() => document.documentElement.classList.contains('apk') && !!window.NATIVE));
   await pg.evaluate(() => { LIST = { k:'tm-kod' }; crtaj(); }); await pg.waitForTimeout(200); await pg.fill('[data-ekod]', 'ABCDEF'); await pg.click('[data-ekodda]'); await pg.waitForTimeout(1500);
   ok('ulaz kodom → turnirski način (ekipa na moru)', await pg.evaluate(() => S.v === 'tm' && PRAVO.on));
   await pg.waitForTimeout(16000);
+  ok('603: prije GPS dozvole obavijest o lokaciji (Dopusti uvijek), GPS još ne radi', !!(await pg.$('#gpsObj')) && /Dopusti uvijek/.test(await pg.innerText('#gpsObj')) && await pg.evaluate(() => window.__cap.watchers.length === 0));
+  await pg.click('[data-gpsda]'); await pg.waitForTimeout(16000);
+  ok('603: traka nove verzije ljuske (3 > 1) s poveznicom za preuzimanje', await pg.evaluate(() => { const a = document.getElementById('apkNova'); return !!a && /raw\/main\/apk\/bgf-live\.apk/.test(a.href) && /\(3\)/.test(a.textContent); }));
   const w = await pg.evaluate(() => window.__cap.watchers.map(x => x.opt));
   ok('pozadinski GPS pokrenut s nazivom ekipe u obavijesti', w.length === 1 && /TRITON/.test(w[0].backgroundTitle) && w[0].requestPermissions === true, JSON.stringify(w));
   await pg.evaluate(() => window.__cap.watchers[0].cb({ latitude:42.62, longitude:18.15, accuracy:8, speed:4.1, bearing:180 }, null));

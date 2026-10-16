@@ -485,7 +485,7 @@ body.tmmod .uz{color:#0456E8!important}
 .kkoraci span.cek{background:#fef3c7;color:#92400e}
 .info .brzo, main > .brzo{margin:0 0 12px}
 /* 505 · oznaka verzije (da se vidi koja je verzija na mobitelu) */
-body::after{content:'v602';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
+body::after{content:'v603';position:fixed;right:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);font:600 10px/1 system-ui,sans-serif;color:#64748b;opacity:.55;pointer-events:none;z-index:5}
 /* 515 · stanje ribe bojom ruba (Nikola 13.10.) */
 .ulov.rub-zeleno{border-left:5px solid #16a34a;border-radius:0 12px 12px 0}
 .ulov.rub-plavo{border-left:5px solid #2563eb;border-radius:0 12px 12px 0}
@@ -4141,6 +4141,7 @@ var REG;
   function trebaGps(){ return !!(PR.on && PR.dan && PR.ekipa); }
   function pokreniGps(){
     var BG = PL.BackgroundGeolocation; if (!BG || N.gpsId) return;
+    if (window.GPS_OBJASNJENO && !GPS_OBJASNJENO()) return;   /* 603: obavijest o lokaciji prije traženja dozvole */
     BG.addWatcher({ backgroundTitle:'BGF.LIVE — ' + ((PR.ekipa && PR.ekipa.name) || 'ekipa') + ' na moru', backgroundMessage:'Pozicija se šalje sucu dok traje ribolovni dan.', requestPermissions:true, stale:false, distanceFilter:25 },
       function(loc, err){ if (err) { if (err.code === 'NOT_AUTHORIZED') { try{ BG.openSettings(); }catch(e){} } return; } if (!loc) return;
         var p = { coords:{ latitude:loc.latitude, longitude:loc.longitude, accuracy:loc.accuracy, speed:loc.speed, heading:loc.bearing } };
@@ -4552,6 +4553,54 @@ var REG;
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([g], { type:'application/gpx+xml' })); a.download = String(t.n || 'turnir').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase() + '.gpx'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
   window.__gpx602 = gpx;
+})();
+</script>
+
+<script>
+/* ===== 603 · APK: obavijest o lokaciji (prije dozvole) + provjera nove verzije ljuske ===== */
+(function(){ 'use strict';
+  var C = window.Capacitor; if (!C || !C.isNativePlatform || !C.isNativePlatform()) return;
+  var PL = C.Plugins || {};
+  var NOVO = { 'Lokacija broda':['Boat location','Bootsposition','Posizione della barca'],
+    'Dok je tvoja ekipa na moru i traje ribolovni dan, BGF.LIVE šalje sucu poziciju broda svake minute — i kad je aplikacija zatvorena ili je mobitel u džepu. Pozicija služi za sigurnost i provjeru zone; javno se prikazuje tek nakon zaključanog dana, i to samo pozicija ulova.':['While your team is at sea and the fishing day is on, BGF.LIVE sends the boat position to the judge every minute — even when the app is closed or the phone is in a pocket. It is used for safety and zone checks; publicly only catch positions are shown, after the day is locked.','Solange dein Team auf See ist und der Angeltag läuft, sendet BGF.LIVE jede Minute die Bootsposition an den Schiedsrichter — auch wenn die App geschlossen ist. Öffentlich werden nur Fangpositionen nach Tagesabschluss gezeigt.','Mentre la squadra è in mare e la giornata di pesca è in corso, BGF.LIVE invia al giudice la posizione della barca ogni minuto — anche ad app chiusa. Pubblicamente si vedono solo le posizioni delle catture dopo la chiusura del giorno.'],
+    'Na sljedećem pitanju odaberi „Dopusti uvijek” (ili „Cijelo vrijeme”). Ako ga ne ponudi, otvori postavke aplikacije → Lokacija → Dopusti uvijek.':['On the next prompt choose “Allow all the time”. If it is not offered, open app settings → Location → Allow all the time.','Wähle bei der nächsten Frage „Immer zulassen“. Falls nicht angeboten: App-Einstellungen → Standort → Immer zulassen.','Alla prossima richiesta scegli “Consenti sempre”. Se non compare: impostazioni app → Posizione → Consenti sempre.'],
+    'Razumijem, nastavi':['I understand, continue','Verstanden, weiter','Ho capito, continua'], 'Ne sada':['Not now','Nicht jetzt','Non ora'], 'Otvori postavke':['Open settings','Einstellungen öffnen','Apri impostazioni'],
+    'Nova verzija aplikacije':['New app version','Neue App-Version','Nuova versione dell’app'], 'Preuzmi':['Download','Herunterladen','Scarica'] };
+  Object.keys(NOVO).forEach(function(k){ if (!RJ[k]) RJ[k] = NOVO[k]; }); KLJUCEVI.length = 0; Object.keys(RJ).sort(function(a, b){ return b.length - a.length; }).forEach(function(k){ KLJUCEVI.push(k); });
+  function T(hr){ var j = { en:0, de:1, it:2 }[S.jezik]; var r = NOVO[hr] || RJ[hr]; return (j === undefined || !r) ? hr : (r[j] || hr); }
+  var odbijeno = false;
+  window.GPS_OBJASNJENO = function(){
+    try { if (localStorage.getItem('bgf-gps-ok') === '1') return true; } catch(e) {}
+    if (odbijeno || document.getElementById('gpsObj')) return false;
+    var d = document.createElement('div'); d.id = 'gpsObj';
+    d.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(7,26,45,.72);display:flex;align-items:flex-end;justify-content:center';
+    d.innerHTML = '<div style="background:#fff;color:#071A2D;border-radius:20px 20px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px));max-width:560px;width:100%"><div style="font-size:34px">📍</div><b style="font-size:20px;display:block;margin:6px 0">' + T('Lokacija broda') + '</b>'
+      + '<p style="margin:0 0 10px;line-height:1.45">' + T('Dok je tvoja ekipa na moru i traje ribolovni dan, BGF.LIVE šalje sucu poziciju broda svake minute — i kad je aplikacija zatvorena ili je mobitel u džepu. Pozicija služi za sigurnost i provjeru zone; javno se prikazuje tek nakon zaključanog dana, i to samo pozicija ulova.') + '</p>'
+      + '<p style="margin:0 0 14px;line-height:1.45;color:#0456E8;font-weight:600">' + T('Na sljedećem pitanju odaberi „Dopusti uvijek” (ili „Cijelo vrijeme”). Ako ga ne ponudi, otvori postavke aplikacije → Lokacija → Dopusti uvijek.') + '</p>'
+      + '<button data-gpsda style="width:100%;padding:15px;border:0;border-radius:12px;background:#0456E8;color:#fff;font-weight:800;font-size:16px">' + T('Razumijem, nastavi') + '</button>'
+      + '<div style="display:flex;gap:8px;margin-top:8px"><button data-gpspost style="flex:1;padding:12px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;font-weight:700">' + T('Otvori postavke') + '</button><button data-gpsne style="flex:1;padding:12px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;font-weight:700">' + T('Ne sada') + '</button></div></div>';
+    document.body.appendChild(d);
+    d.addEventListener('click', function(ev){
+      if (ev.target.closest('[data-gpsda]')) { try { localStorage.setItem('bgf-gps-ok', '1'); } catch(e) {} d.remove(); }
+      else if (ev.target.closest('[data-gpspost]')) { try { PL.BackgroundGeolocation && PL.BackgroundGeolocation.openSettings(); } catch(e) {} }
+      else if (ev.target.closest('[data-gpsne]')) { odbijeno = true; d.remove(); setTimeout(function(){ odbijeno = false; }, 30 * 60000); }
+    });
+    return false;
+  };
+  /* nova verzija ljuske: build iz Android projekta ↔ apk/verzija.json na GitHub Pagesu */
+  function provjeriVerziju(){
+    var App = PL.App; if (!App || !App.getInfo) return;
+    App.getInfo().then(function(info){
+      return fetch('apk/verzija.json?' + Date.now()).then(function(r){ return r.json(); }).then(function(v){
+        var moja = Number(info.build) || 0; if (!v.verzija || moja >= Number(v.verzija) || document.getElementById('apkNova')) return;
+        var b = document.createElement('a'); b.id = 'apkNova'; b.href = 'https://github.com/bgflive/bgf-app/raw/main/apk/bgf-live.apk'; b.target = '_blank';
+        b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:9999;background:#16a34a;color:#fff;text-decoration:none;border-radius:14px;padding:12px 14px;font-weight:800;display:flex;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,.25)';
+        b.innerHTML = '<span>⬆ ' + T('Nova verzija aplikacije') + ' (' + v.verzija + ')</span><span>' + T('Preuzmi') + ' ›</span>';
+        document.body.appendChild(b);
+      });
+    }).catch(function(){});
+  }
+  setTimeout(provjeriVerziju, 4000); setInterval(provjeriVerziju, 6 * 3600000);
 })();
 </script>
 
